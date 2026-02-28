@@ -11,37 +11,39 @@
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
     {{-- NAVBAR --}}
-    <livewire:navbar.nav-bar />
+    <livewire:nav-bar.nav-bar />
 
     {{-- CONTENT AREA --}}
-    <div class="flex flex-1">
+    <div class="flex flex-1 mt-1">
+
+        {{-- RIGHT SIDEBAR --}}
+        <aside class="hidden lg:block w-64 bg-white border-l">
+            <x-public.side-bar />
+        </aside>
 
         {{-- LEFT SIDE --}}
-        <div class="flex-1 flex flex-col">
+        <div class="flex-2 flex flex-col ml-4 mt-">
 
             {{-- HERO (optional) --}}
             @if(!isset($hideHero) || !$hideHero)
                 <section class="w-full">
-                    <x-hero.slider />
+                    <livewire:public.hero-slider />
                 </section>
             @endif
 
             {{-- MAIN --}}
-            <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+            <main class="flex-1 p-6 max-w-7xl mx-auto w-full overflow-y-auto">
                 {{ $slot }}
             </main>
 
-            {{-- FOOTER --}}
-            <x-footer.main-footer />
-
         </div>
-
-        {{-- RIGHT SIDEBAR --}}
-        <aside class="hidden lg:block w-72 bg-white border-l">
-            <livewire:public.sidebar />
-        </aside>
+        
 
     </div>
+      {{-- FOOTER --}}
+             <footer>
+                @include('partials.footer')
+            </footer>
 
     @livewireScripts
 </body>

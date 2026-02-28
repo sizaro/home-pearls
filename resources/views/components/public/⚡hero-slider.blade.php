@@ -47,7 +47,7 @@ new class extends Component
         $slide = $this->slides[$this->index];
     @endphp
 
-    <div class="relative h-[450px] md:h-[550px]">
+    <div class="relative h-[50vh] md:h-[60vh]">
 
         {{-- BACKGROUND IMAGE --}}
         <img

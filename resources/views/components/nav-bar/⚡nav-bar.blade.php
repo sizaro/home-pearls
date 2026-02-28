@@ -128,131 +128,103 @@ new class extends Component
     }
 };
 ?>
+<div x-data="{ open: false }" class="sticky top-0 z-50">
 
-<div>
-    
-{{-- NAVBAR --}}
-<nav class="bg-white shadow-md border-b">
+    {{-- NAVBAR --}}
+    <nav class="bg-white shadow-md border-b">
 
-    <div class="max-w-7xl mx-auto px-4">
+        <div class="max-w-7xl mx-auto px-4">
 
-        {{-- MOBILE TOP ROW --}}
-        <div class="flex items-center justify-between h-16 lg:hidden">
+            {{-- MOBILE ROW --}}
+            <div class="flex items-center justify-between h-16 lg:hidden">
 
-            {{-- HAMBURGER --}}
-            <button class="text-gray-700 text-2xl">
-                ☰
-            </button>
+                {{-- HAMBURGER (mobile only) --}}
+                <button @click="open = true" class="text-2xl">
+                    ☰
+                </button>
 
-            {{-- LOGO --}}
-            <a href="/" class="text-2xl font-bold text-gray-800">
-                Home Pearls
-            </a>
+                <a href="/" class="text-2xl font-bold">
+                    Home Pearls
+                </a>
 
-            {{-- ACCOUNT --}}
-            <a href="#" class="text-gray-700 text-2xl">
-                👤
-            </a>
+                <a href="#" class="text-2xl">
+                    👤
+                </a>
 
-        </div>
+            </div>
 
-        {{-- MOBILE SEARCH --}}
-        <div class="lg:hidden pb-4">
-            <form wire:submit.prevent="searchProducts">
-                <div class="flex">
-
-                    <input
-                        type="text"
-                        wire:model.defer="search"
-                        placeholder="Search products..."
-                        class="flex-1 border border-gray-300 rounded-l-full px-4 py-2"
-                    >
-
-                    <button
-                        type="submit"
-                        class="bg-yellow-500 text-black px-4 rounded-r-full"
-                    >
-                        🔍
-                    </button>
-
-                </div>
-            </form>
-        </div>
-
-        {{-- DESKTOP ROW --}}
-        <div class="hidden lg:flex items-center justify-between h-16">
-
-            {{-- LOGO --}}
-            <a href="/" class="text-2xl font-bold text-gray-800">
-                Home Pearls
-            </a>
-
-            {{-- SEARCH --}}
-            <div class="flex-1 mx-6">
+            {{-- MOBILE SEARCH (below row) --}}
+            <div class="lg:hidden pb-4">
                 <form wire:submit.prevent="searchProducts">
                     <div class="flex">
-
                         <input
                             type="text"
                             wire:model.defer="search"
-                            placeholder="Search beds, chairs, metal works..."
-                            class="flex-1 border border-gray-300 rounded-l-full px-4 py-2 focus:outline-none"
+                            placeholder="Search products..."
+                            class="flex-1 border px-4 py-2"
                         >
-
-                        <button
-                            type="submit"
-                            class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-full px-6 hover:bg-gray-200"
-                        >
+                        <button type="submit" class="bg-yellow-500 px-4">
                             🔍
                         </button>
-
                     </div>
                 </form>
             </div>
 
-            {{-- CART --}}
-            <a href="#" class="relative text-gray-700 hover:text-black text-2xl">
-                🛒
-                <span class="absolute -top-2 -right-3 bg-yellow-500 text-xs text-black px-1.5 rounded-full">
-                    0
-                </span>
-            </a>
+            {{-- DESKTOP ROW --}}
+            <div class="hidden lg:flex items-center justify-between h-16">
 
-            {{-- ACCOUNT --}}
-            <a href="#" class="text-gray-700 text-2xl ml-4">
-                👤
-            </a>
+                {{-- LOGO --}}
+                <a href="/" class="text-2xl font-bold">
+                    Home Pearls
+                </a>
 
-        </div>
+                {{-- SEARCH --}}
+                <div class="flex-1 mx-6">
+                    <form wire:submit.prevent="searchProducts">
+                        <div class="flex">
+                            <input
+                                type="text"
+                                wire:model.defer="search"
+                                placeholder="Search beds, chairs..."
+                                class="flex-1 border px-4 py-2"
+                            >
+                            <button type="submit" class="bg-gray-100 px-6">
+                                🔍
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
-    </div>
-</nav>
+                {{-- CART --}}
+                <a href="#" class="text-2xl relative">
+                    🛒
+                    <span class="absolute -top-2 -right-3 bg-yellow-500 text-xs px-1.5 rounded-full">
+                        0
+                    </span>
+                </a>
 
-{{-- SEARCH RESULTS (Optional preview) --}}
-@if($this->filteredResults)
-    <div class="bg-white border-b">
-        <div class="max-w-7xl mx-auto px-4 py-3">
+                {{-- ACCOUNT --}}
+                <a href="#" class="text-2xl ml-4">
+                    👤
+                </a>
 
-            <h2 class="font-semibold text-gray-800 mb-2">
-                Results for "{{ $search }}"
-            </h2>
-
-            <div class="space-y-2">
-                @foreach($this->filteredResults as $result)
-                    <div class="p-2 border rounded">
-                        <span class="text-sm text-gray-500">{{ $result['type'] }}:</span>
-                        <span class="font-medium">{{ $result['name'] }}</span>
-
-                        @if(isset($result['price']))
-                            <span class="text-yellow-600 font-bold">
-                                - ${{ number_format($result['price']) }}
-                            </span>
-                        @endif
-                    </div>
-                @endforeach
             </div>
 
         </div>
+    </nav>
+
+    {{-- MOBILE SIDEBAR (slide) --}}
+    <div
+        x-show="open"
+        x-transition
+        @click.away="open = false"
+        class="fixed inset-0 z-50 flex">
+
+        <div class="w-72 bg-white shadow-lg">
+            @include('components.public.side-bar')
+        </div>
+
+        <div class="flex-1" @click="open = false"></div>
     </div>
-@endif
+
 </div>
