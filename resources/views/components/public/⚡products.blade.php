@@ -5,8 +5,9 @@ use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.products')] class extends Component
 {
-    public string $category = '';
+    public string $search = '';
 
+    // Mock categories
     public array $categories = [
         ['name' => 'Beds', 'slug' => 'beds'],
         ['name' => 'Chairs', 'slug' => 'chairs'],
@@ -15,6 +16,7 @@ new #[Layout('layouts.products')] class extends Component
         ['name' => 'Sofas', 'slug' => 'sofas'],
     ];
 
+    // Mock products by category
     public array $products = [
         'beds' => [
             ['name' => 'Luxury Wooden Bed', 'price' => 1200],
@@ -40,49 +42,62 @@ new #[Layout('layouts.products')] class extends Component
 
     public function mount()
     {
-        $this->category = request()->query('category');
-
-        // If no category provided → redirect to first available
-        if (!$this->category || !array_key_exists($this->category, $this->products)) {
-            $this->category = array_key_first($this->products);
-        }
+        // Search string from URL
+        $this->search = request()->query('search', '');
     }
 
+    // Filter products by search term (categories + product names)
     public function getFilteredProductsProperty()
     {
-        return $this->products[$this->category] ?? [];
+        $term = strtolower($this->search);
+
+        if (!$term) {
+            return [];
+        }
+
+        $results = [];
+
+        foreach ($this->products as $category => $items) {
+            foreach ($items as $product) {
+                if (
+                    str_contains(strtolower($product['name']), $term)
+                ) {
+                    $results[] = $product;
+                }
+            }
+        }
+
+        return $results;
     }
 };
 ?>
 
 <div>
 
-    <h1 class="text-2xl font-bold mb-6 capitalize">
-        {{ str_replace('-', ' ', $category) }}
+    <h1 class="text-2xl font-bold mb-6">
+        Results for "{{ $search }}"
     </h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @if(empty($this->filteredProducts))
+        <p class="text-gray-500">No products found.</p>
+    @else
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($this->filteredProducts as $product)
+                <div class="bg-white rounded shadow p-4">
+                    <h3 class="font-semibold text-gray-800">
+                        {{ $product['name'] }}
+                    </h3>
 
-        @forelse($this->filteredProducts as $product)
-            <div class="bg-white rounded shadow p-4">
-                <h3 class="font-semibold text-gray-800">
-                    {{ $product['name'] }}
-                </h3>
+                    <p class="text-yellow-600 font-bold mt-2">
+                        ${{ number_format($product['price']) }}
+                    </p>
 
-                <p class="text-yellow-600 font-bold mt-2">
-                    ${{ number_format($product['price']) }}
-                </p>
-
-                <button class="mt-3 w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded">
-                    Add to Cart
-                </button>
-            </div>
-        @empty
-            <div class="text-gray-500">
-                No products found.
-            </div>
-        @endforelse
-
-    </div>
+                    <button class="mt-3 w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded">
+                        Add to Cart
+                    </button>
+                </div>
+            @endforeach
+        </div>
+    @endif
 
 </div>

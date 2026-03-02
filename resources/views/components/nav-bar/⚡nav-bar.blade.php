@@ -6,128 +6,19 @@ new class extends Component
 {
     public string $search = '';
 
-    // 🔥 MOCKED DATA
-    public array $categories = [
-        [
-            'name' => 'Beds',
-            'slug' => 'beds',
-            'products' => [
-                [
-                    'name' => 'Luxury Wooden Bed',
-                    'variants' => [
-                        ['name' => 'Queen Size - Brown', 'price' => 1200],
-                        ['name' => 'King Size - Dark', 'price' => 1500],
-                        ['name' => 'Single - Light', 'price' => 800],
-                    ],
-                ],
-                [
-                    'name' => 'Modern Metal Bed Frame',
-                    'variants' => [
-                        ['name' => 'Queen Metal - Black', 'price' => 900],
-                        ['name' => 'King Metal - Silver', 'price' => 1100],
-                    ],
-                ],
-            ],
-        ],
-        [
-            'name' => 'Chairs',
-            'slug' => 'chairs',
-            'products' => [
-                [
-                    'name' => 'Classic Wooden Chair',
-                    'variants' => [
-                        ['name' => 'Brown Wood', 'price' => 250],
-                        ['name' => 'Dark Oak', 'price' => 300],
-                    ],
-                ],
-                [
-                    'name' => 'Steel Office Chair',
-                    'variants' => [
-                        ['name' => 'Black Steel', 'price' => 350],
-                        ['name' => 'Ergonomic - Grey', 'price' => 450],
-                    ],
-                ],
-            ],
-        ],
-        [
-            'name' => 'Metal Works',
-            'slug' => 'metal',
-            'products' => [
-                [
-                    'name' => 'Premium Metal Table',
-                    'variants' => [
-                        ['name' => 'Large - Black', 'price' => 700],
-                        ['name' => 'Small - Silver', 'price' => 550],
-                    ],
-                ],
-                [
-                    'name' => 'Metal Shelf',
-                    'variants' => [
-                        ['name' => '4 Layer - Black', 'price' => 400],
-                        ['name' => '2 Layer - Grey', 'price' => 280],
-                    ],
-                ],
-            ],
-        ],
-    ];
-
     public function searchProducts()
     {
-        if (trim($this->search) === '') return;
+        if (trim($this->search) === '') {
+            return;
+        }
 
-        return redirect()->route('products.index', [
+        return redirect()->route('products', [
             'search' => $this->search
         ]);
     }
-
-    // 🔥 FILTER MOCKED DATA
-    public function getFilteredResultsProperty()
-    {
-        if (!$this->search) {
-            return [];
-        }
-
-        $term = strtolower($this->search);
-
-        $results = [];
-
-        foreach ($this->categories as $category) {
-
-            // category match
-            if (str_contains(strtolower($category['name']), $term)) {
-                $results[] = [
-                    'type' => 'Category',
-                    'name' => $category['name'],
-                ];
-            }
-
-            foreach ($category['products'] as $product) {
-
-                // product match
-                if (str_contains(strtolower($product['name']), $term)) {
-                    $results[] = [
-                        'type' => 'Product',
-                        'name' => $product['name'],
-                    ];
-                }
-
-                // variant match
-                foreach ($product['variants'] as $variant) {
-                    if (str_contains(strtolower($variant['name']), $term)) {
-                        $results[] = [
-                            'type' => 'Variant',
-                            'name' => $variant['name'],
-                            'price' => $variant['price'],
-                        ];
-                    }
-                }
-            }
-        }
-
-        return $results;
-    }
 };
 ?>
+
 <div x-data="{ open: false }" class="sticky top-0 z-50">
 
     {{-- NAVBAR --}}
@@ -138,12 +29,12 @@ new class extends Component
             {{-- MOBILE ROW --}}
             <div class="flex items-center justify-between h-16 lg:hidden">
 
-                {{-- HAMBURGER (mobile only) --}}
+                {{-- HAMBURGER --}}
                 <button @click="open = true" class="text-2xl">
                     ☰
                 </button>
 
-                <a href="/" class="text-2xl font-bold">
+                <a href="{{ route('home-pearls') }}" class="text-2xl font-bold">
                     Home Pearls
                 </a>
 
@@ -153,7 +44,7 @@ new class extends Component
 
             </div>
 
-            {{-- MOBILE SEARCH (below row) --}}
+            {{-- MOBILE SEARCH --}}
             <div class="lg:hidden pb-4">
                 <form wire:submit.prevent="searchProducts">
                     <div class="flex">
@@ -174,7 +65,7 @@ new class extends Component
             <div class="hidden lg:flex items-center justify-between h-16">
 
                 {{-- LOGO --}}
-                <a href="/" class="text-2xl font-bold">
+                <a href="{{ route('home-pearls') }}" class="text-2xl font-bold">
                     Home Pearls
                 </a>
 
@@ -195,7 +86,7 @@ new class extends Component
                     </form>
                 </div>
 
-                {{-- CART --}}
+                {{-- CART (logic later) --}}
                 <a href="#" class="text-2xl relative">
                     🛒
                     <span class="absolute -top-2 -right-3 bg-yellow-500 text-xs px-1.5 rounded-full">
@@ -213,7 +104,7 @@ new class extends Component
         </div>
     </nav>
 
-    {{-- MOBILE SIDEBAR (slide) --}}
+    {{-- MOBILE SIDEBAR --}}
     <div
         x-show="open"
         x-transition
