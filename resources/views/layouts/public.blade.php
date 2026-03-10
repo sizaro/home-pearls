@@ -18,7 +18,7 @@
 
         {{-- RIGHT SIDEBAR --}}
         <aside class="hidden lg:block w-64 bg-white border-l">
-            <x-public.side-bar />
+             <livewire:public.side-bar />
         </aside>
 
         {{-- LEFT SIDE --}}

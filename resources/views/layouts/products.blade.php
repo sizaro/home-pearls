@@ -18,7 +18,7 @@
 
         {{-- SIDEBAR (desktop) --}}
         <aside class="hidden lg:block w-64 bg-white border-r">
-            <x-public.side-bar />
+            <livewire:public.side-bar />
         </aside>
 
         {{-- MAIN CONTENT --}}
