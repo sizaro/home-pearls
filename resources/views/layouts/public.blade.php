@@ -17,9 +17,7 @@
     <div class="flex flex-1 mt-1">
 
         {{-- RIGHT SIDEBAR --}}
-        <aside class="hidden lg:block w-64 bg-white border-l">
              <livewire:public.side-bar />
-        </aside>
 
         {{-- LEFT SIDE --}}
         <div class="flex-2 flex flex-col ml-4 mt-">

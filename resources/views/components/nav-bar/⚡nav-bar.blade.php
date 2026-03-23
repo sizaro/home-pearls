@@ -94,10 +94,47 @@ new class extends Component
                     </span>
                 </a>
 
-                {{-- ACCOUNT --}}
-                <a href="#" class="text-2xl ml-4">
-                    👤
+                {{-- ACCOUNT ICON WITH LOGIN/DASHBOARD --}}
+<div x-data="{ open: false }" class="relative ml-4">
+    {{-- Icon --}}
+    <button @click="open = !open" class="text-2xl">
+        👤
+    </button>
+
+    {{-- Dropdown --}}
+    <div 
+        x-show="open" 
+        @click.away="open = false"
+        x-transition
+        class="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50"
+    >
+        @if (Route::has('login'))
+            @auth
+                <a 
+                    href="{{ url('/dashboard') }}"
+                    class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                >
+                    Dashboard
                 </a>
+            @else
+                <a 
+                    href="{{ route('login') }}" 
+                    class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                >
+                    Log in
+                </a>
+                @if (Route::has('register'))
+                    <a 
+                        href="{{ route('register') }}" 
+                        class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                    >
+                        Register
+                    </a>
+                @endif
+            @endauth
+        @endif
+    </div>
+</div>
 
             </div>
 
@@ -112,7 +149,7 @@ new class extends Component
         class="fixed inset-0 z-50 flex">
 
         <div class="w-72 bg-white shadow-lg">
-            @include('components.public.side-bar')
+            <livewire:public.side-bar />
         </div>
 
         <div class="flex-1" @click="open = false"></div>
