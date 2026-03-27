@@ -8,8 +8,8 @@ new class extends Component
 };
 ?>
 
-<div>
-    <aside class="w-64 bg-gray-900 text-white p-5">
+<div class=bg-gray-500 text-white h-screen>
+    <aside class="w-64 bg-gray-900 text-white p-5 h-full">
         <h2 class="text-2xl font-bold mb-6">Admin</h2>
 
         <nav class="space-y-3">

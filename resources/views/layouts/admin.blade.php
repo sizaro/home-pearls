@@ -16,11 +16,10 @@
     {{-- CONTENT AREA --}}
     <div class="flex flex-1 mt-1">
 
-        {{-- RIGHT SIDEBAR --}}
+     {{-- RIGHT SIDEBAR --}}
              <livewire:admin.side-bar />
-
         {{-- LEFT SIDE --}}
-        <div class="flex-2 flex flex-col ml-4 mt-">
+        <div class="flex-2 flex flex-col ml-4">
 
             {{-- MAIN --}}
             <main class="flex-1 p-6 max-w-7xl mx-auto w-full overflow-y-auto">
@@ -35,6 +34,7 @@
              <footer>
                 @include('partials.footer')
             </footer>
+            
 
     @livewireScripts
 </body>
