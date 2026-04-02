@@ -1,6 +1,4 @@
-# ---------- Dockerfile for Laravel on Render ----------
-
-# Use official PHP 8.4 with Apache
+# Use official PHP with Apache
 FROM php:8.4-apache
 
 # Set working directory
@@ -15,14 +13,19 @@ RUN apt-get update && apt-get install -y \
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Copy Composer from official Composer image
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy project files
 COPY . .
 
+# Ensure SQLite database exists
+RUN mkdir -p /var/www/html/database \
+    && touch /var/www/html/database/database.sqlite
+
 # Install PHP dependencies and clear Laravel caches
 RUN composer install --no-dev --optimize-autoloader \
+    && php artisan key:generate \
     && php artisan config:clear \
     && php artisan cache:clear \
     && php artisan route:clear \
@@ -36,10 +39,6 @@ RUN chown -R www-data:www-data /var/www/html \
 # Set Apache DocumentRoot to Laravel public folder
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-
-# Optional: set environment variables default (can override in Render dashboard)
-ENV APP_ENV=production
-ENV APP_DEBUG=false
 
 # Expose port
 EXPOSE 80
