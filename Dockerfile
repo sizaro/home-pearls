@@ -1,4 +1,4 @@
-# Use the official PHP image with Apache
+# Use official PHP image with Apache
 FROM php:8.4-apache
 
 # Set working directory
@@ -19,19 +19,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy project files
 COPY . .
 
-# Copy .env.example to .env so Laravel has environment
+# Copy .env.example to .env
 RUN cp .env.example .env
 
-# Set proper permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Generate Laravel app key
-RUN php artisan key:generate
-
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
+
+# Generate Laravel app key
+RUN php artisan key:generate
 
 # Clear caches
 RUN php artisan config:clear \
@@ -43,7 +43,7 @@ RUN php artisan config:clear \
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 
-# Expose port
+# Expose port 80
 EXPOSE 80
 
 # Start Apache in foreground

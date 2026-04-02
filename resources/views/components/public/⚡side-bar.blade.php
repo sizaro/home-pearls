@@ -1,23 +1,17 @@
 <?php
 
 use Livewire\Component;
+use App\Models\Category; // make sure this exists
 
 new class extends Component
 {
-    // Later this will come from database
-    public array $categories = [
-        ['name' => 'Beds', 'slug' => 'beds'],
-        ['name' => 'Chairs', 'slug' => 'chairs'],
-        ['name' => 'Sofas', 'slug' => 'sofas'],
-        ['name' => 'Dining Tables', 'slug' => 'dining-tables'],
-        ['name' => 'Office Desks', 'slug' => 'office-desks'],
-        ['name' => 'Wardrobes', 'slug' => 'wardrobes'],
-        ['name' => 'Doors', 'slug' => 'doors'],
-        ['name' => 'Metal Gates', 'slug' => 'metal-gates'],
-        ['name' => 'Railings', 'slug' => 'railings'],
-        ['name' => 'Kitchen Cabinets', 'slug' => 'kitchen-cabinets'],
-        ['name' => 'Custom Wood & Metal', 'slug' => 'custom-wood-metal'],
-    ];
+    public $categories = [];
+
+    public function mount()
+    {
+        // Fetch all categories from the database, ordered by name
+        $this->categories = Category::orderBy('name')->get();
+    }
 };
 ?>
 
@@ -30,9 +24,9 @@ new class extends Component
     <nav class="p-4 space-y-1 text-gray-700 overflow-y-auto flex-1">
 
         @foreach($categories as $category)
-            <a href="{{ route('categories.show', $category['slug']) }}"
+            <a href="{{ route('categories.show', $category->slug) }}"
                class="block px-4 py-2 rounded hover:bg-gray-100">
-                {{ $category['name'] }}
+                {{ $category->name }}
             </a>
         @endforeach
 
