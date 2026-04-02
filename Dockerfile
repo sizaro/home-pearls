@@ -1,29 +1,32 @@
-FROM php:8.2-cli
+# Use the official PHP image with Apache
+FROM php:8.2-apache
 
-# Install system dependencies
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     git unzip curl libpq-dev libzip-dev zip \
-    && docker-php-ext-install pdo pdo_pgsql zip
+    && docker-php-ext-install pdo pdo_pgsql zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www
-
-# Copy project
+# Copy project files
 COPY . .
 
-# Install dependencies
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Laravel setup
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
-RUN php artisan view:cache || true
+# Give Apache permissions to write
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Expose port
-EXPOSE 10000
+EXPOSE 80
 
-# Start Laravel
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# Start Apache in foreground
+CMD ["apache2-foreground"]
