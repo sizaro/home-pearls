@@ -1,4 +1,4 @@
-# Use official PHP with Apache
+# Use the official PHP image with Apache
 FROM php:8.4-apache
 
 # Set working directory
@@ -19,11 +19,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy project files
 COPY . .
 
-# Ensure SQLite database exists
-RUN mkdir -p /var/www/html/database \
-    && touch /var/www/html/database/database.sqlite
+# Ensure .env exists and set proper permissions
+RUN cp .env.example .env \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Install PHP dependencies and clear Laravel caches
+# Install PHP dependencies and clear caches
 RUN composer install --no-dev --optimize-autoloader \
     && php artisan key:generate \
     && php artisan config:clear \
@@ -31,16 +33,11 @@ RUN composer install --no-dev --optimize-autoloader \
     && php artisan route:clear \
     && php artisan view:clear
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
 # Set Apache DocumentRoot to Laravel public folder
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 
-# Expose port
+# Expose port 80
 EXPOSE 80
 
 # Start Apache in foreground
