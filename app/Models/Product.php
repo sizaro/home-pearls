@@ -14,7 +14,7 @@ class Product extends Model
         'name',
         'slug',
         'description',
-        'image_url', // now included
+        'image_url',
     ];
 
     /**

@@ -11,10 +11,12 @@ class ProductVariant extends Model
 
     protected $fillable = [
         'product_id',
+        'name',
+        'description',
         'price',
         'stock',
         'sku',
-        'image_url', // now included
+        'image_url',
     ];
 
     /**
