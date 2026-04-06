@@ -1,38 +1,39 @@
 <?php
 
 use Livewire\Component;
+use App\Models\Product;
 
 new class extends Component
 {
-    // 🔥 MOCKED SLIDES
-    public array $slides = [
-        [
-            'title' => 'Luxury Wooden Beds',
-            'subtitle' => 'Handcrafted quality and comfort',
-            'image' => 'https://via.placeholder.com/1200x500?text=Wooden+Beds',
-        ],
-        [
-            'title' => 'Modern Metal Beds',
-            'subtitle' => 'Strong frames and elegant design',
-            'image' => 'https://via.placeholder.com/1200x500?text=Metal+Beds',
-        ],
-        [
-            'title' => 'Premium Chairs',
-            'subtitle' => 'Comfort for home and office',
-            'image' => 'https://via.placeholder.com/1200x500?text=Premium+Chairs',
-        ],
-        [
-            'title' => 'Metal Furniture',
-            'subtitle' => 'Built to last with modern style',
-            'image' => 'https://via.placeholder.com/1200x500?text=Metal+Furniture',
-        ],
-    ];
-
+    public array $products = [];
     public int $index = 0;
+
+    public function mount()
+    {
+        $this->products = Product::orderBy('id', 'desc')
+            ->take(4)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'short_description' => $product->short_description,
+                    'image_url' => $product->image_url,
+                ];
+            })
+            ->toArray();
+
+        // Safety check
+        if (count($this->products) === 0) {
+            $this->index = 0;
+        }
+    }
 
     public function nextSlide()
     {
-        $this->index = ($this->index + 1) % count($this->slides);
+        if (count($this->products) === 0) return;
+
+        $this->index = ($this->index + 1) % count($this->products);
     }
 };
 ?>
@@ -44,47 +45,58 @@ new class extends Component
 >
 
     @php
-        $slide = $this->slides[$this->index];
+        $product = $this->products[$this->index] ?? null;
     @endphp
 
-    <div class="relative h-[50vh] md:h-[60vh]">
+    @if($product)
+        <div class="relative h-[50vh] md:h-[60vh]">
 
-        {{-- BACKGROUND IMAGE --}}
-        <img
-            src="{{ $slide['image'] }}"
-            class="w-full h-full object-cover"
-        >
+            {{-- BACKGROUND IMAGE --}}
+            <img
+                src="{{ $product['image_url'] 
+                    ? route('products.image', ['id' => $product['id']]) 
+                    : 'https://via.placeholder.com/1200x500' }}"
+                class="w-full h-full object-cover"
+            >
 
-        {{-- OVERLAY --}}
-        <div class="absolute inset-0 bg-black/40"></div>
+            {{-- OVERLAY --}}
+            <div class="absolute inset-0 bg-black/40"></div>
 
-        {{-- TEXT CONTENT --}}
-        <div class="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
-            <h1 class="text-3xl md:text-5xl font-bold">
-                {{ $slide['title'] }}
-            </h1>
+            {{-- TEXT CONTENT --}}
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
+                <h1 class="text-3xl md:text-5xl font-bold">
+                    {{ $product['name'] }}
+                </h1>
 
-            <p class="mt-3 text-lg md:text-xl text-gray-200">
-                {{ $slide['subtitle'] }}
-            </p>
+                <p class="mt-3 text-lg md:text-xl text-gray-200 max-w-2xl">
+                    {{ $product['short_description'] ?? '' }}
+                </p>
 
-            <a href="#"
-               class="mt-6 bg-yellow-500 text-black px-6 py-3 rounded font-semibold hover:bg-yellow-400">
-                Shop Now
-            </a>
+                <a href="{{ route('products.show', $product['id']) }}"
+                   class="mt-6 bg-yellow-500 text-black px-6 py-3 rounded font-semibold hover:bg-yellow-400 transition">
+                    Shop Now
+                </a>
+            </div>
+
         </div>
-
-    </div>
+    @else
+        {{-- FALLBACK --}}
+        <div class="h-[50vh] flex items-center justify-center text-gray-500">
+            No products available
+        </div>
+    @endif
 
     {{-- INDICATORS --}}
-    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        @foreach($this->slides as $i => $s)
-            <span
-                wire:click="$set('index', {{ $i }})"
-                class="w-3 h-3 rounded-full cursor-pointer
-                    {{ $i === $this->index ? 'bg-yellow-500' : 'bg-white/50' }}"
-            ></span>
-        @endforeach
-    </div>
+    @if(count($this->products) > 0)
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            @foreach($this->products as $i => $p)
+                <span
+                    wire:click="$set('index', {{ $i }})"
+                    class="w-3 h-3 rounded-full cursor-pointer transition
+                        {{ $i === $this->index ? 'bg-yellow-500 scale-110' : 'bg-white/50' }}"
+                ></span>
+            @endforeach
+        </div>
+    @endif
 
 </div>

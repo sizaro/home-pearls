@@ -2,71 +2,57 @@
 
 use Livewire\Component;
 use Livewire\Attributes\Layout;
+use App\Models\Category;
+use App\Models\Product;
 
 new #[Layout('layouts.public')] class extends Component
 {
-    // 🔥 MOCKED CATEGORIES
-    public array $categories = [
-        ['name' => 'Beds'],
-        ['name' => 'Chairs'],
-        ['name' => 'Metal Works'],
-        ['name' => 'Tables'],
-        ['name' => 'Sofas'],
-    ];
-
-    // 🔥 MOCKED FEATURED PRODUCTS
-    public array $featured = [
-        [
-            'name' => 'Luxury Wooden Bed',
-            'price' => 1200,
-            'old_price' => 1500,
-            'image' => 'https://via.placeholder.com/400x300?text=Wooden+Bed',
-        ],
-        [
-            'name' => 'Modern Metal Bed',
-            'price' => 900,
-            'old_price' => 1100,
-            'image' => 'https://via.placeholder.com/400x300?text=Metal+Bed',
-        ],
-        [
-            'name' => 'Premium Office Chair',
-            'price' => 350,
-            'old_price' => 500,
-            'image' => 'https://via.placeholder.com/400x300?text=Office+Chair',
-        ],
-        [
-            'name' => 'Metal Coffee Table',
-            'price' => 650,
-            'old_price' => 800,
-            'image' => 'https://via.placeholder.com/400x300?text=Coffee+Table',
-        ],
-    ];
-
-    // 🔥 MOCKED TOP PRODUCTS
-    public array $top = [
-        [
-            'name' => 'Ergonomic Chair',
-            'price' => 450,
-            'image' => 'https://via.placeholder.com/300x250?text=Ergonomic+Chair',
-        ],
-        [
-            'name' => 'Luxury Bed Frame',
-            'price' => 1300,
-            'image' => 'https://via.placeholder.com/300x250?text=Bed+Frame',
-        ],
-        [
-            'name' => 'Metal Storage Shelf',
-            'price' => 280,
-            'image' => 'https://via.placeholder.com/300x250?text=Storage+Shelf',
-        ],
-    ];
-
-    // 🔥 MOCKED ADVERTS
+    public array $categories = [];
+    public array $featured = [];
+    public array $top = [];
     public array $adverts = [
         'Free delivery on orders above $500',
         'Custom furniture designs available',
         'Limited time discounts on beds',
     ];
+
+    public function mount()
+    {
+        // Fetch categories
+        $this->categories = Category::orderBy('name')
+                                    ->get(['name'])
+                                    ->toArray();
+
+        // Featured products (latest 8 products)
+        $this->featured = Product::orderBy('id', 'desc')
+                                 ->take(8)
+                                 ->with('variants')
+                                 ->get()
+                                 ->map(function($product) {
+                                     $variant = $product->variants->first();
+                                     return [
+                                         'id' => $product->id,
+                                         'name' => $product->name,
+                                         'image_url' => $product->image_url,
+                                         'price' => $variant ? $variant->price : null,
+                                     ];
+                                 })->toArray();
+
+        // Top products (latest 6 products)
+        $this->top = Product::orderBy('id', 'desc')
+                            ->take(6)
+                            ->with('variants')
+                            ->get()
+                            ->map(function($product) {
+                                $variant = $product->variants->first();
+                                return [
+                                    'id' => $product->id,
+                                    'name' => $product->name,
+                                    'image_url' => $product->image_url,
+                                    'price' => $variant ? $variant->price : null,
+                                ];
+                            })->toArray();
+    }
 };
 ?>
 
@@ -101,25 +87,23 @@ new #[Layout('layouts.public')] class extends Component
             @foreach($this->featured as $product)
                 <div class="bg-white rounded shadow hover:shadow-lg transition p-4">
 
-                    <img src="{{ $product['image'] }}"
+                    <img src="{{ $product['image_url'] ?? 'https://via.placeholder.com/400x300' }}"
                          class="w-full h-48 object-cover rounded">
 
                     <h3 class="mt-3 font-semibold text-gray-800">
                         {{ $product['name'] }}
                     </h3>
 
-                    <p class="mt-1">
-                        <span class="text-yellow-600 font-bold">
-                            ${{ number_format($product['price']) }}
-                        </span>
-                        <span class="text-gray-400 line-through ml-2">
-                            ${{ number_format($product['old_price']) }}
-                        </span>
+                    @if(!is_null($product['price']))
+                    <p class="mt-1 text-yellow-600 font-bold">
+                        ${{ number_format($product['price'], 2) }}
                     </p>
+                    @endif
 
-                    <button class="mt-3 w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded">
-                        Add to Cart
-                    </button>
+                    <a href="{{ route('products.show', $product['id']) }}"
+                       class="mt-3 w-full inline-block bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded text-center">
+                        View
+                    </a>
 
                 </div>
             @endforeach
@@ -134,20 +118,23 @@ new #[Layout('layouts.public')] class extends Component
             @foreach($this->top as $product)
                 <div class="bg-white rounded shadow p-4">
 
-                    <img src="{{ $product['image'] }}"
+                    <img src="{{ $product['image_url'] ?? 'https://via.placeholder.com/300x250' }}"
                          class="w-full h-40 object-cover rounded">
 
                     <h3 class="mt-3 font-semibold text-gray-800">
                         {{ $product['name'] }}
                     </h3>
 
+                    @if(!is_null($product['price']))
                     <p class="text-yellow-600 font-bold">
-                        ${{ number_format($product['price']) }}
+                        ${{ number_format($product['price'], 2) }}
                     </p>
+                    @endif
 
-                    <button class="mt-3 w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded">
+                    <a href="{{ route('products.show', $product['id']) }}"
+                       class="mt-3 w-full inline-block bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded text-center">
                         View
-                    </button>
+                    </a>
 
                 </div>
             @endforeach

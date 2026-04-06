@@ -2,102 +2,76 @@
 
 use Livewire\Component;
 use Livewire\Attributes\Layout;
+use App\Models\Product;
+use App\Models\Category;
 
 new #[Layout('layouts.products')] class extends Component
 {
     public string $search = '';
-
-    // Mock categories
-    public array $categories = [
-        ['name' => 'Beds', 'slug' => 'beds'],
-        ['name' => 'Chairs', 'slug' => 'chairs'],
-        ['name' => 'Metal Works', 'slug' => 'metal-works'],
-        ['name' => 'Tables', 'slug' => 'tables'],
-        ['name' => 'Sofas', 'slug' => 'sofas'],
-    ];
-
-    // Mock products by category
-    public array $products = [
-        'beds' => [
-            ['name' => 'Luxury Wooden Bed', 'price' => 1200],
-            ['name' => 'Modern Metal Bed', 'price' => 900],
-        ],
-        'chairs' => [
-            ['name' => 'Office Chair', 'price' => 350],
-            ['name' => 'Ergonomic Chair', 'price' => 450],
-        ],
-        'metal-works' => [
-            ['name' => 'Metal Shelf', 'price' => 280],
-            ['name' => 'Metal Gate', 'price' => 1500],
-        ],
-        'tables' => [
-            ['name' => 'Dining Table', 'price' => 800],
-            ['name' => 'Coffee Table', 'price' => 450],
-        ],
-        'sofas' => [
-            ['name' => 'Leather Sofa', 'price' => 2000],
-            ['name' => 'Fabric Sofa', 'price' => 1200],
-        ],
-    ];
+    public array $products = [];
 
     public function mount()
     {
-        // Search string from URL
+        // Get search string from URL
         $this->search = request()->query('search', '');
-    }
+        
+        if ($this->search) {
+            // Use case-insensitive partial match
+            $term = strtolower($this->search);
 
-    // Filter products by search term (categories + product names)
-    public function getFilteredProductsProperty()
-    {
-        $term = strtolower($this->search);
-
-        if (!$term) {
-            return [];
+            // Fetch products whose name contains the search term
+            $this->products = Product::whereRaw('LOWER(name) LIKE ?', ["%{$term}%"])
+                ->with('category') // eager-load category
+                ->get()
+                ->map(function($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'category' => $product->category ? $product->category->name : null,
+                        'image_url' => $product->image_url,
+                    ];
+                })
+                ->toArray();
         }
-
-        $results = [];
-
-        foreach ($this->products as $category => $items) {
-            foreach ($items as $product) {
-                if (
-                    str_contains(strtolower($product['name']), $term)
-                ) {
-                    $results[] = $product;
-                }
-            }
-        }
-
-        return $results;
     }
 };
 ?>
 
-<div>
+<div class="max-w-6xl mx-auto py-6 space-y-6">
 
-    <h1 class="text-2xl font-bold mb-6">
-        Results for "{{ $search }}"
+    <h1 class="text-2xl font-bold mb-4">
+        Search Results for "{{ $search }}"
     </h1>
 
-    @if(empty($this->filteredProducts))
+    @if(empty($products))
         <p class="text-gray-500">No products found.</p>
     @else
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($this->filteredProducts as $product)
-                <div class="bg-white rounded shadow p-4">
-                    <h3 class="font-semibold text-gray-800">
-                        {{ $product['name'] }}
-                    </h3>
+            @foreach($products as $product)
+                <a href="{{ route('products.show', $product['id']) }}"
+                   class="block bg-white rounded shadow hover:shadow-lg transition overflow-hidden group">
+                   
+                    <div class="relative h-48 md:h-56 lg:h-64 overflow-hidden">
+                        <img
+                            src="{{ $product['image_url'] 
+                                ? route('products.image', ['id' => $product['id']]) 
+                                : 'https://via.placeholder.com/400x300?text=No+Image' }}"
+                            class="w-full h-48 object-cover"
+                        />
+                    </div>
 
-                    <p class="text-yellow-600 font-bold mt-2">
-                        ${{ number_format($product['price']) }}
-                    </p>
-
-                    <button class="mt-3 w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded">
-                        Add to Cart
-                    </button>
-                </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800">{{ $product['name'] }}</h3>
+                        @if($product['category'])
+                            <p class="text-gray-500 text-sm mt-1 capitalize">{{ $product['category'] }}</p>
+                        @endif
+                        <span class="mt-3 inline-block bg-yellow-500 text-black px-3 py-1 rounded font-medium hover:bg-yellow-400">
+                            View Product
+                        </span>
+                    </div>
+                </a>
             @endforeach
         </div>
     @endif
-
 </div>
