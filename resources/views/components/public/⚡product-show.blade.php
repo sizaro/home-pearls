@@ -14,7 +14,6 @@ new #[Layout('layouts.products')] class extends Component
         // Assign the model and eager-load variants
         $this->product = $product->load('variants');
 
-        // Safety check (optional, usually unnecessary with route binding)
         if (!$this->product) {
             abort(404);
         }
@@ -39,7 +38,6 @@ new #[Layout('layouts.products')] class extends Component
     >
 
     <h1 class="text-3xl font-bold mb-2">{{ $this->product->name }}</h1>
-
     <p class="text-gray-600 mb-8">{{ $this->product->description }}</p>
 
     <h2 class="text-xl font-semibold mb-4">Available Options</h2>
@@ -61,9 +59,10 @@ new #[Layout('layouts.products')] class extends Component
 
                     <h3 class="font-semibold text-lg">{{ $variant->name }}</h3>
                     <p class="text-yellow-600 font-bold mt-2">${{ number_format($variant->price, 2) }}</p>
-                    <button class="mt-4 w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded">
-                        Add to Cart
-                    </button>
+
+                    {{-- **Add to Cart Component** --}}
+                    <livewire:add-to-cart :variant-id="$variant->id" :key="$variant->id" />
+                    
                 </div>
             @endforeach
         </div>
