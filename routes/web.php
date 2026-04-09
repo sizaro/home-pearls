@@ -18,6 +18,9 @@ Route::livewire('/products/{product}', 'public.product-show')
 Route::livewire('/products', 'public.products')
     ->name('products');
 
+Route::livewire('/order/success', 'public.order-success')
+    ->name('order-success');
+
 
 
 Route::prefix('admin')

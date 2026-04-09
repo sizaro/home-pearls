@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Http\Livewire;
-
 use Livewire\Component;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -10,7 +8,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
 
-class AddToCart extends Component
+new class extends Component
 {
     public int $variantId;
     public int $quantity = 1;

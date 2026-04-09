@@ -87,12 +87,7 @@ new class extends Component
                 </div>
 
                 {{-- CART (logic later) --}}
-                <a href="#" class="text-2xl relative">
-                    🛒
-                    <span class="absolute -top-2 -right-3 bg-yellow-500 text-xs px-1.5 rounded-full">
-                        0
-                    </span>
-                </a>
+                <livewire:common.cart-count />
 
                 {{-- ACCOUNT ICON WITH LOGIN/DASHBOARD --}}
 <div x-data="{ open: false }" class="relative ml-4">
