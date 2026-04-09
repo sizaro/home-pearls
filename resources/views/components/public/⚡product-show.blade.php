@@ -61,7 +61,7 @@ new #[Layout('layouts.products')] class extends Component
                     <p class="text-yellow-600 font-bold mt-2">${{ number_format($variant->price, 2) }}</p>
 
                     {{-- **Add to Cart Component** --}}
-                    <livewire:add-to-cart :variant-id="$variant->id" :key="$variant->id" />
+                    <livewire:public.add-to-cart :variant-id="$variant->id" :key="$variant->id" />
                     
                 </div>
             @endforeach

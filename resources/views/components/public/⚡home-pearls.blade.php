@@ -87,8 +87,12 @@ new #[Layout('layouts.public')] class extends Component
             @foreach($this->featured as $product)
                 <div class="bg-white rounded shadow hover:shadow-lg transition p-4">
 
-                    <img src="{{ $product['image_url'] ?? 'https://via.placeholder.com/400x300' }}"
-                         class="w-full h-48 object-cover rounded">
+                    <img
+                src="{{ $product['image_url'] 
+                    ? route('products.image', ['id' => $product['id']]) 
+                    : 'https://via.placeholder.com/1200x500' }}"
+                class="w-full h-40 object-cover"
+            >
 
                     <h3 class="mt-3 font-semibold text-gray-800">
                         {{ $product['name'] }}
@@ -118,8 +122,12 @@ new #[Layout('layouts.public')] class extends Component
             @foreach($this->top as $product)
                 <div class="bg-white rounded shadow p-4">
 
-                    <img src="{{ $product['image_url'] ?? 'https://via.placeholder.com/300x250' }}"
-                         class="w-full h-40 object-cover rounded">
+                     <img
+                src="{{ $product['image_url'] 
+                    ? route('products.image', ['id' => $product['id']]) 
+                    : 'https://via.placeholder.com/1200x500' }}"
+                class="w-full h-40 object-cover"
+            >
 
                     <h3 class="mt-3 font-semibold text-gray-800">
                         {{ $product['name'] }}

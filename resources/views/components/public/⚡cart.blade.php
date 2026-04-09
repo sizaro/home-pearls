@@ -118,8 +118,12 @@ new #[Layout('layouts.products')] class extends Component
             @foreach($cart->items as $item)
                 <div class="flex items-center bg-white shadow rounded p-4">
                     
-                    <img src="{{ $item->variant->image_url ?? 'https://via.placeholder.com/100x100' }}" 
-                         class="w-24 h-24 object-cover rounded mr-4">
+                     <img
+                        src="{{ $item->variant->image_url 
+                            ? route('product-variants.image', ['id' => $item->variant->id])
+                            : 'https://via.placeholder.com/300x200?text=No+Image' }}"
+                        class="w-full h-28 object-cover rounded mb-2"
+                    >
                     
                     <div class="flex-1">
                         <h3 class="font-semibold">{{ $item->variant->name }}</h3>

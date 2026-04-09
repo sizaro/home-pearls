@@ -21,6 +21,12 @@ Route::livewire('/products', 'public.products')
 Route::livewire('/order/success', 'public.order-success')
     ->name('order-success');
 
+Route::livewire('cart', 'public.cart')
+    ->name('cart');
+Route::livewire('checkout', 'public.check-out')
+    ->name('checkout');
+
+
 
 
 Route::prefix('admin')
@@ -33,6 +39,8 @@ Route::prefix('admin')
         Route::livewire('/categories', 'admin.categories')->name('categories');
         Route::livewire('/products', 'admin.products')->name('products');
         Route::livewire('/product-variants', 'admin.product-variants')->name('product-variants');
+        Route::livewire('orders', 'admin.orders')
+    ->name('orders');
 
     });    
 

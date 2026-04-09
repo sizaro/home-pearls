@@ -64,13 +64,8 @@ new class extends Component
         $item->quantity += $this->quantity;
         $item->save();
 
-        $this->emit('cartUpdated');
+        $this->dispatch('cartUpdated');
         session()->flash('success', $variant->name . ' added to cart.');
-    }
-
-    public function render()
-    {
-        return view('livewire.add-to-cart');
     }
 }
 ?>
