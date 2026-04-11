@@ -27,22 +27,26 @@ Route::livewire('checkout', 'public.check-out')
     ->name('checkout');
 
 
-
-
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'role:super admin'])
+    ->middleware(['auth'])
     ->group(function () {
 
+        // Dashboard
         Route::livewire('/', 'admin.dashboard')->name('dashboard');
 
+        // Core management (accessible to admins/employees too)
         Route::livewire('/categories', 'admin.categories')->name('categories');
         Route::livewire('/products', 'admin.products')->name('products');
         Route::livewire('/product-variants', 'admin.product-variants')->name('product-variants');
-        Route::livewire('orders', 'admin.orders')
-    ->name('orders');
+        Route::livewire('/orders', 'admin.orders')->name('orders');
 
-    });    
+        // 🔒 SUPER ADMIN ONLY
+        Route::middleware(['role:super admin'])->group(function () {
+        Route::livewire('/users', 'admin.users')->name('users');
+        });
+
+    }); 
 
 
     Route::get('/products/image/{id}', function ($id) {
