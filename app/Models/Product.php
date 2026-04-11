@@ -15,6 +15,7 @@ class Product extends Model
         'slug',
         'description',
         'image_url',
+         'created_by'
     ];
 
     /**
@@ -32,4 +33,9 @@ class Product extends Model
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    public function creator()
+{
+    return $this->belongsTo(User::class, 'created_by');
+}
 }

@@ -5,6 +5,7 @@ use Livewire\WithFileUploads;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Str;
 
@@ -18,7 +19,9 @@ new #[Layout('layouts.admin')] class extends Component
     public float $price = 0;
     public int $stock = 0;
     public string $sku = '';
+
     public $imageFile = null;
+
     public int $variantId = 0;
     public bool $modalOpen = false;
 
@@ -33,13 +36,30 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function loadVariants()
     {
-        $this->variants = ProductVariant::with('product')->orderBy('id', 'desc')->get();
+        $user = Auth::user();
+
+        if ($user->hasRole('super admin')) {
+            $this->variants = ProductVariant::with('product')
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            $this->variants = ProductVariant::with('product')
+                ->whereHas('product', function ($q) use ($user) {
+                    $q->where('created_by', $user->id);
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+        }
     }
 
     public function openModal($id = null)
     {
         if ($id) {
             $variant = ProductVariant::findOrFail($id);
+
+            // ✅ POLICY
+            $this->authorize('update', $variant);
+
             $this->variantId = $variant->id;
             $this->product_id = $variant->product_id;
             $this->name = $variant->name;
@@ -49,6 +69,10 @@ new #[Layout('layouts.admin')] class extends Component
             $this->sku = $variant->sku;
             $this->imageFile = null;
         } else {
+
+            // ✅ POLICY
+            $this->authorize('create', ProductVariant::class);
+
             $this->resetFields();
         }
 
@@ -78,6 +102,7 @@ new #[Layout('layouts.admin')] class extends Component
         $slugProduct = Str::upper(Str::slug($productName, ''));
         $slugVariant = Str::upper(Str::slug($variantName, ''));
         $random = rand(1000, 9999);
+
         return "HPA-{$slugProduct}-{$slugVariant}-{$random}";
     }
 
@@ -90,29 +115,42 @@ new #[Layout('layouts.admin')] class extends Component
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'sku' => 'nullable|string|max:255',
-            'imageFile' => $this->variantId ? 'nullable|image|max:2048' : 'required|image|max:2048',
+            'imageFile' => $this->variantId
+                ? 'nullable|image|max:2048'
+                : 'required|image|max:2048',
         ]);
 
         $product = Product::findOrFail($this->product_id);
 
-        // Generate SKU automatically if empty
+        // 🚨 IMPORTANT: Policy doesn't automatically check THIS case
+        // Prevent assigning variant to someone else's product
+        $this->authorize('update', $product);
+
         if (!$this->sku) {
             $this->sku = $this->generateSku($product->name, $this->name);
         }
 
+        // =========================
+        // UPDATE
+        // =========================
         if ($this->variantId) {
+
             $variant = ProductVariant::findOrFail($this->variantId);
 
-            // Delete old image if replaced
+            // ✅ POLICY
+            $this->authorize('update', $variant);
+
+            $image_path = $variant->image_url;
+
             if ($this->imageFile) {
-                if ($variant->image_url && Storage::exists('private/product-variants/' . $variant->image_url)) {
+                if ($variant->image_url &&
+                    Storage::exists('private/product-variants/' . $variant->image_url)) {
                     Storage::delete('private/product-variants/' . $variant->image_url);
                 }
+
                 $filename = time() . '_' . $this->imageFile->getClientOriginalName();
                 $this->imageFile->storeAs('private/product-variants', $filename);
                 $image_path = $filename;
-            } else {
-                $image_path = $variant->image_url;
             }
 
             $variant->update([
@@ -124,7 +162,16 @@ new #[Layout('layouts.admin')] class extends Component
                 'sku' => $this->sku,
                 'image_url' => $image_path,
             ]);
-        } else {
+        }
+
+        // =========================
+        // CREATE
+        // =========================
+        else {
+
+            // ✅ POLICY
+            $this->authorize('create', ProductVariant::class);
+
             $filename = time() . '_' . $this->imageFile->getClientOriginalName();
             $this->imageFile->storeAs('private/product-variants', $filename);
 
@@ -147,25 +194,30 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $variant = ProductVariant::findOrFail($id);
 
-        if ($variant->image_url && Storage::exists('private/product-variants/' . $variant->image_url)) {
+        // ✅ POLICY
+        $this->authorize('delete', $variant);
+
+        if ($variant->image_url &&
+            Storage::exists('private/product-variants/' . $variant->image_url)) {
             Storage::delete('private/product-variants/' . $variant->image_url);
         }
 
         $variant->delete();
         $this->loadVariants();
     }
-}
+};
 ?>
 
 <div class="space-y-6 p-6">
     <h1 class="text-2xl font-bold mb-4">Product Variants</h1>
 
-    <button wire:click="openModal"
-        class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-        Add New Variant
-    </button>
+    @can('create', App\Models\ProductVariant::class)
+        <button wire:click="openModal"
+            class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+            Add New Variant
+        </button>
+    @endcan
 
-    {{-- Variants Table --}}
     <div class="bg-white shadow rounded">
         <div class="flex font-bold border-b p-2">
             <div class="w-1/12">ID</div>
@@ -184,23 +236,28 @@ new #[Layout('layouts.admin')] class extends Component
                 <div class="w-2/12">{{ $variant->product?->name }}</div>
                 <div class="w-2/12">${{ number_format($variant->price, 2) }}</div>
                 <div class="w-1/12">{{ $variant->stock }}</div>
+
                 <div class="w-2/12">
                     @if ($variant->image_url)
                         <img src="{{ route('product-variants.image', $variant->id) }}?{{ time() }}"
                              class="h-12 w-12 object-cover rounded">
-                    @else
-                        <span class="text-gray-400">No Image</span>
                     @endif
                 </div>
+
                 <div class="w-2/12 flex gap-2">
-                    <button wire:click="openModal({{ $variant->id }})"
-                        class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                        Edit
-                    </button>
-                    <button wire:click="deleteVariant({{ $variant->id }})"
-                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                        Delete
-                    </button>
+                    @can('update', $variant)
+                        <button wire:click="openModal({{ $variant->id }})"
+                            class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                            Edit
+                        </button>
+                    @endcan
+
+                    @can('delete', $variant)
+                        <button wire:click="deleteVariant({{ $variant->id }})"
+                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            Delete
+                        </button>
+                    @endcan
                 </div>
             </div>
         @endforeach
@@ -221,26 +278,28 @@ new #[Layout('layouts.admin')] class extends Component
                     @endforeach
                 </select>
 
-                <input type="text" wire:model="name" placeholder="Variant Name"
-                       class="border p-2 w-full mb-2">
+                <input type="text" wire:model="name"
+                       class="border p-2 w-full mb-2"
+                       placeholder="Variant Name">
 
-                <textarea wire:model="description" placeholder="Variant Description"
-                          class="border p-2 w-full mb-2"></textarea>
+                <textarea wire:model="description"
+                          class="border p-2 w-full mb-2"
+                          placeholder="Variant Description"></textarea>
 
-                <label>Price
-                    <input type="number" step="0.01" wire:model="price"
-                       placeholder="Price" class="border p-2 w-full mb-2">
-                </label>
-                
-                <label>Stock
-                    <input type="number" wire:model="stock"
-                       placeholder="Stock" class="border p-2 w-full mb-2">
-                </label>
+                <input type="number" step="0.01" wire:model="price"
+                       class="border p-2 w-full mb-2"
+                       placeholder="Price">
+
+                <input type="number" wire:model="stock"
+                       class="border p-2 w-full mb-2"
+                       placeholder="Stock">
 
                 <input type="text" wire:model="sku" disabled
-                       placeholder="SKU" class="border p-2 w-full mb-2">
+                       class="border p-2 w-full mb-2"
+                       placeholder="SKU">
 
-                <input type="file" wire:model="imageFile" class="border p-2 w-full mb-4">
+                <input type="file" wire:model="imageFile"
+                       class="border p-2 w-full mb-4">
 
                 @if ($imageFile)
                     <img src="{{ $imageFile->temporaryUrl() }}" class="h-24 mb-4 rounded">
@@ -254,6 +313,7 @@ new #[Layout('layouts.admin')] class extends Component
                         class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                         Cancel
                     </button>
+
                     <button wire:click="saveVariant"
                         class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
                         {{ $variantId ? 'Update' : 'Add' }}

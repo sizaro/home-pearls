@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.admin')] class extends Component
@@ -15,13 +16,16 @@ new #[Layout('layouts.admin')] class extends Component
     public string $name = '';
     public string $description = '';
     public int $category_id = 0;
+
     public $imageFile = null;
+
     public int $productId = 0;
     public bool $modalOpen = false;
 
     public $products = [];
     public $categories = [];
-    public $imageTimestamp = null; // for cache-busting
+
+    public $imageTimestamp = null;
 
     public function mount()
     {
@@ -31,19 +35,36 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function loadProducts()
     {
-        $this->products = Product::with('category')->orderBy('id', 'desc')->get();
+        $user = Auth::user();
+
+        if ($user->hasRole('super admin')) {
+            $this->products = Product::with('category')
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            $this->products = Product::with('category')
+                ->where('created_by', $user->id)
+                ->orderBy('id', 'desc')
+                ->get();
+        }
     }
 
     public function openModal($id = null)
     {
         if ($id) {
             $product = Product::findOrFail($id);
+
+            $this->authorize('update', $product);
+
             $this->productId = $product->id;
             $this->name = $product->name;
             $this->description = $product->description;
             $this->category_id = $product->category_id;
-            $this->imageFile = null; // keep old image unless replaced
+            $this->imageFile = null;
         } else {
+
+            $this->authorize('create', Product::class);
+
             $this->resetFields();
         }
 
@@ -71,15 +92,25 @@ new #[Layout('layouts.admin')] class extends Component
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
-            'imageFile' => $this->productId ? 'nullable|image|max:2048' : 'required|image|max:2048',
+            'imageFile' => $this->productId
+                ? 'nullable|image|max:2048'
+                : 'required|image|max:2048',
         ]);
 
+        $user = Auth::user();
+
         if ($this->productId) {
+
             $product = Product::findOrFail($this->productId);
 
-            // Delete old image if replaced
+            $this->authorize('update', $product);
+
+            $image_path = $product->image_url;
+
             if ($this->imageFile) {
-                if ($product->image_url && Storage::exists('private/products/' . $product->image_url)) {
+
+                if ($product->image_url &&
+                    Storage::exists('private/products/' . $product->image_url)) {
                     Storage::delete('private/products/' . $product->image_url);
                 }
 
@@ -87,10 +118,7 @@ new #[Layout('layouts.admin')] class extends Component
                 $this->imageFile->storeAs('private/products', $filename);
                 $image_path = $filename;
 
-                // Update timestamp for cache-busting
                 $this->imageTimestamp = now()->timestamp;
-            } else {
-                $image_path = $product->image_url;
             }
 
             $product->update([
@@ -101,6 +129,9 @@ new #[Layout('layouts.admin')] class extends Component
                 'image_url' => $image_path,
             ]);
         } else {
+
+            $this->authorize('create', Product::class);
+
             $filename = time() . '_' . $this->imageFile->getClientOriginalName();
             $this->imageFile->storeAs('private/products', $filename);
 
@@ -110,6 +141,7 @@ new #[Layout('layouts.admin')] class extends Component
                 'category_id' => $this->category_id,
                 'slug' => Str::slug($this->name),
                 'image_url' => $filename,
+                'created_by' => $user->id,
             ]);
 
             $this->imageTimestamp = now()->timestamp;
@@ -123,25 +155,29 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $product = Product::findOrFail($id);
 
-        if ($product->image_url && Storage::exists('private/products/' . $product->image_url)) {
+        $this->authorize('delete', $product);
+
+        if ($product->image_url &&
+            Storage::exists('private/products/' . $product->image_url)) {
             Storage::delete('private/products/' . $product->image_url);
         }
 
         $product->delete();
         $this->loadProducts();
     }
-}
+};
 ?>
 
 <div class="space-y-6 p-6">
     <h1 class="text-2xl font-bold mb-4">Products</h1>
 
-    <button wire:click="openModal"
-        class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-        Add New Product
-    </button>
+    @can('create', App\Models\Product::class)
+        <button wire:click="openModal"
+            class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+            Add New Product
+        </button>
+    @endcan
 
-    {{-- Products Table --}}
     <div class="bg-white shadow rounded">
         <div class="flex font-bold border-b p-2">
             <div class="w-1/12">ID</div>
@@ -156,6 +192,7 @@ new #[Layout('layouts.admin')] class extends Component
                 <div class="w-1/12">{{ $product->id }}</div>
                 <div class="w-2/12">{{ $product->name }}</div>
                 <div class="w-3/12">{{ $product->category?->name }}</div>
+
                 <div class="w-3/12">
                     @if ($product->image_url)
                         <img src="{{ route('products.image', $product->id) }}?t={{ $imageTimestamp ?? now()->timestamp }}"
@@ -164,15 +201,21 @@ new #[Layout('layouts.admin')] class extends Component
                         <span class="text-gray-400">No Image</span>
                     @endif
                 </div>
+
                 <div class="w-3/12 flex gap-2">
-                    <button wire:click="openModal({{ $product->id }})"
-                        class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                        Edit
-                    </button>
-                    <button wire:click="deleteProduct({{ $product->id }})"
-                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                        Delete
-                    </button>
+                    @can('update', $product)
+                        <button wire:click="openModal({{ $product->id }})"
+                            class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                            Edit
+                        </button>
+                    @endcan
+
+                    @can('delete', $product)
+                        <button wire:click="deleteProduct({{ $product->id }})"
+                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            Delete
+                        </button>
+                    @endcan
                 </div>
             </div>
         @endforeach

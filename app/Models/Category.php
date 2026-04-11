@@ -12,6 +12,7 @@ class Category extends Model
     protected $fillable = [
         'name',
         'slug',
+        'created_by',
     ];
 
     /**
@@ -26,5 +27,10 @@ class Category extends Model
     {
         return 'slug';
     }
+
+    public function creator()
+{
+    return $this->belongsTo(User::class, 'created_by');
+}
 
 }

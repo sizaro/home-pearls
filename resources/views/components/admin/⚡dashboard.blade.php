@@ -111,6 +111,13 @@ new #[Layout('layouts.admin')] class extends Component
                class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
                 Manage Variants
             </a>
+
+            @role('super admin')
+            <a href="{{ route('admin.users') }}"
+            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Manage Users
+            </a>
+            @endrole
         </div>
     </div>
 

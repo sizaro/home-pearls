@@ -17,6 +17,7 @@ class ProductVariant extends Model
         'stock',
         'sku',
         'image_url',
+         'created_by',
     ];
 
     /**
@@ -26,4 +27,9 @@ class ProductVariant extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function creator()
+{
+    return $this->belongsTo(User::class, 'created_by');
+}
 }

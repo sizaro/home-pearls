@@ -20,12 +20,29 @@ class RolePermissionSeeder extends Seeder
         // 1️⃣ Create Permissions
         // -----------------------------
         $permissions = [
-            'view dashboard',
-            'manage users',
-            'view reports',
-            'create reports',
-            'manage system',
-        ];
+        'view dashboard',
+
+        'manage users',
+        'manage roles',
+
+        'create products',
+        'edit products',
+        'delete products',
+
+        'create categories',
+        'edit categories',
+        'delete categories',
+
+        'create product variants',
+        'edit product variants',
+        'delete product variants',
+
+        'view orders',
+        'update orders',
+
+        'create reports',
+        'view reports',
+    ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
