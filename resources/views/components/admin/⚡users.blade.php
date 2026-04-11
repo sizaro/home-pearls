@@ -163,24 +163,22 @@ new #[Layout('layouts.admin')] class extends Component
                     {{ $userId ? 'Edit User' : 'Add User' }}
                 </h2>
 
-                <input type="text" wire:model="name"
-                    class="border p-2 w-full mb-2"
-                    placeholder="Name">
+                <input type="text" wire:model="name" class="border p-2 w-full mb-1" placeholder="Name">
+@error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                <input type="email" wire:model="email"
-                    class="border p-2 w-full mb-2"
-                    placeholder="Email">
+<input type="email" wire:model="email" class="border p-2 w-full mb-1" placeholder="Email">
+@error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                <input type="password" wire:model="password"
-                    class="border p-2 w-full mb-2"
-                    placeholder="Password">
+<input type="password" wire:model="password" class="border p-2 w-full mb-1" placeholder="Password">
+@error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                <select wire:model="role" class="border p-2 w-full mb-4">
-                    <option value="">Select Role</option>
-                    @foreach($roles as $r)
-                        <option value="{{ $r }}">{{ $r }}</option>
-                    @endforeach
-                </select>
+<select wire:model="role" class="border p-2 w-full mb-1">
+    <option value="">Select Role</option>
+    @foreach($roles as $r)
+        <option value="{{ $r }}">{{ $r }}</option>
+    @endforeach
+</select>
+@error('role') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
                 <div class="flex justify-end gap-2">
                     <button wire:click="closeModal"

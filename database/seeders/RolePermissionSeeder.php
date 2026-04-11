@@ -13,88 +13,136 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // -----------------------------
-        // 1️⃣ Create Permissions
+        // 1️⃣ PERMISSIONS
         // -----------------------------
         $permissions = [
-        'view dashboard',
 
-        'manage users',
-        'manage roles',
+            // Dashboard
+            'view dashboard',
 
-        'create products',
-        'edit products',
-        'delete products',
+            // Users
+            'manage users',
 
-        'create categories',
-        'edit categories',
-        'delete categories',
+            // Products
+            'create products',
+            'edit products',
+            'delete products',
 
-        'create product variants',
-        'edit product variants',
-        'delete product variants',
+            // Categories
+            'create categories',
+            'edit categories',
+            'delete categories',
 
-        'view orders',
-        'update orders',
+            // Variants
+            'create product variants',
+            'edit product variants',
+            'delete product variants',
 
-        'create reports',
-        'view reports',
-    ];
+            // Orders
+            'view orders',
+            'update orders',
+        ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
         // -----------------------------
-        // 2️⃣ Create Roles
+        // 2️⃣ ROLES
         // -----------------------------
-        $customerRole = Role::firstOrCreate(['name' => 'customer']);
-        $employeeRole = Role::firstOrCreate(['name' => 'employee']);
-        $superAdminRole = Role::firstOrCreate(['name' => 'super admin']);
+        $superAdmin = Role::firstOrCreate(['name' => 'super admin']);
+        $admin      = Role::firstOrCreate(['name' => 'admin']);
+        $employee   = Role::firstOrCreate(['name' => 'employee']);
+        $customer   = Role::firstOrCreate(['name' => 'customer']);
 
         // -----------------------------
-        // 3️⃣ Assign Permissions to Roles
+        // 3️⃣ ASSIGN PERMISSIONS
         // -----------------------------
-        $superAdminRole->givePermissionTo(Permission::all()); // all permissions
-        $employeeRole->givePermissionTo(['view dashboard', 'view reports']);
-        $customerRole->givePermissionTo(['view dashboard']);
+
+        // 🔥 Super Admin → everything
+        $superAdmin->syncPermissions(Permission::all());
+
+        // 🔥 Admin → full store control (except users)
+        $admin->syncPermissions([
+            'view dashboard',
+
+            'create products',
+            'edit products',
+            'delete products',
+
+            'create categories',
+            'edit categories',
+            'delete categories',
+
+            'create product variants',
+            'edit product variants',
+            'delete product variants',
+
+            'view orders',
+            'update orders',
+        ]);
+
+        // 🔥 Employee → limited control (no delete)
+        $employee->syncPermissions([
+            'view dashboard',
+
+            'create products',
+            'edit products',
+
+            'create categories',
+            'edit categories',
+
+            'create product variants',
+            'edit product variants',
+
+            'view orders',
+        ]);
+
+        // 🔥 Customer → basically nothing admin-related
+        $customer->syncPermissions([]);
 
         // -----------------------------
-        // 4️⃣ Create Users
+        // 4️⃣ USERS
         // -----------------------------
-        $superAdmin = User::firstOrCreate(
-            ['email' => 'admin@homepearls.com'],
+        $superAdminUser = User::firstOrCreate(
+            ['email' => 'homepearls2@gmail.com'],
             [
-                'name' => 'Super Admin',
+                'name' => 'Mukisa Nasibu',
+                'password' => Hash::make('mukisa123'),
+            ]
+        );
+        $superAdminUser->syncRoles([$superAdmin]);
+
+        $adminUser = User::firstOrCreate(
+            ['email' => 'homepearls2@gmail.com'],
+            [
+                'name' => 'Admin User',
                 'password' => Hash::make('Admin123!'),
             ]
         );
+        $adminUser->syncRoles([$admin]);
 
-        $superAdmin->assignRole($superAdminRole);
-
-        $employee = User::firstOrCreate(
+        $employeeUser = User::firstOrCreate(
             ['email' => 'employee@homepearls.com'],
             [
                 'name' => 'Employee User',
                 'password' => Hash::make('Employee123!'),
             ]
         );
+        $employeeUser->syncRoles([$employee]);
 
-        $employee->assignRole($employeeRole);
-
-        $customer = User::firstOrCreate(
+        $customerUser = User::firstOrCreate(
             ['email' => 'customer@homepearls.com'],
             [
                 'name' => 'Customer User',
                 'password' => Hash::make('Customer123!'),
             ]
         );
+        $customerUser->syncRoles([$customer]);
 
-        $customer->assignRole($customerRole);
-
-        $this->command->info('✅ Roles, permissions, and users seeded successfully.');
+        $this->command->info('✅ Roles & permissions seeded correctly.');
     }
 }
