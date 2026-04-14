@@ -31,25 +31,31 @@ new #[Layout('layouts.admin')] class extends Component
     public function mount()
     {
         $this->loadVariants();
-        $this->products = Product::orderBy('name')->get();
+        $this->loadProducts();
+    }
+
+    private function loadProducts()
+    {
+        $user = Auth::user();
+
+        $this->products = $user->hasRole('super admin')
+            ? Product::orderBy('name')->get()
+            : Product::where('created_by', $user->id)->orderBy('name')->get();
     }
 
     public function loadVariants()
     {
         $user = Auth::user();
 
-        if ($user->hasRole('super admin')) {
-            $this->variants = ProductVariant::with('product')
-                ->orderBy('id', 'desc')
-                ->get();
-        } else {
-            $this->variants = ProductVariant::with('product')
-                ->whereHas('product', function ($q) use ($user) {
-                    $q->where('created_by', $user->id);
-                })
-                ->orderBy('id', 'desc')
-                ->get();
+        $query = ProductVariant::with(['product', 'product.creator']);
+
+        if (!$user->hasRole('super admin')) {
+            $query->whereHas('product', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
         }
+
+        $this->variants = $query->latest()->get();
     }
 
     public function openModal($id = null)
@@ -57,7 +63,6 @@ new #[Layout('layouts.admin')] class extends Component
         if ($id) {
             $variant = ProductVariant::findOrFail($id);
 
-            // ✅ POLICY
             $this->authorize('update', $variant);
 
             $this->variantId = $variant->id;
@@ -67,12 +72,10 @@ new #[Layout('layouts.admin')] class extends Component
             $this->price = $variant->price;
             $this->stock = $variant->stock;
             $this->sku = $variant->sku;
+
             $this->imageFile = null;
         } else {
-
-            // ✅ POLICY
             $this->authorize('create', ProductVariant::class);
-
             $this->resetFields();
         }
 
@@ -99,11 +102,10 @@ new #[Layout('layouts.admin')] class extends Component
 
     private function generateSku($productName, $variantName)
     {
-        $slugProduct = Str::upper(Str::slug($productName, ''));
-        $slugVariant = Str::upper(Str::slug($variantName, ''));
-        $random = rand(1000, 9999);
-
-        return "HPA-{$slugProduct}-{$slugVariant}-{$random}";
+        return 'HPA-' .
+            Str::upper(Str::slug($productName, '')) . '-' .
+            Str::upper(Str::slug($variantName, '')) . '-' .
+            rand(1000, 9999);
     }
 
     public function saveVariant()
@@ -115,41 +117,36 @@ new #[Layout('layouts.admin')] class extends Component
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'sku' => 'nullable|string|max:255',
-            'imageFile' => $this->variantId
-                ? 'nullable|image|max:2048'
-                : 'required|image|max:2048',
+            'imageFile' => $this->variantId ? 'nullable|image|max:2048' : 'required|image|max:2048',
         ]);
 
         $product = Product::findOrFail($this->product_id);
 
-        // 🚨 IMPORTANT: Policy doesn't automatically check THIS case
-        // Prevent assigning variant to someone else's product
-        $this->authorize('update', $product);
+        if (!Auth::user()->hasRole('super admin')) {
+            abort_if($product->created_by !== Auth::id(), 403);
+        }
 
         if (!$this->sku) {
             $this->sku = $this->generateSku($product->name, $this->name);
         }
 
-        // =========================
-        // UPDATE
-        // =========================
         if ($this->variantId) {
 
             $variant = ProductVariant::findOrFail($this->variantId);
 
-            // ✅ POLICY
             $this->authorize('update', $variant);
 
             $image_path = $variant->image_url;
 
             if ($this->imageFile) {
-                if ($variant->image_url &&
-                    Storage::exists('private/product-variants/' . $variant->image_url)) {
-                    Storage::delete('private/product-variants/' . $variant->image_url);
+
+                if ($image_path && Storage::exists('private/product-variants/' . $image_path)) {
+                    Storage::delete('private/product-variants/' . $image_path);
                 }
 
                 $filename = time() . '_' . $this->imageFile->getClientOriginalName();
                 $this->imageFile->storeAs('private/product-variants', $filename);
+
                 $image_path = $filename;
             }
 
@@ -162,14 +159,9 @@ new #[Layout('layouts.admin')] class extends Component
                 'sku' => $this->sku,
                 'image_url' => $image_path,
             ]);
-        }
 
-        // =========================
-        // CREATE
-        // =========================
-        else {
+        } else {
 
-            // ✅ POLICY
             $this->authorize('create', ProductVariant::class);
 
             $filename = time() . '_' . $this->imageFile->getClientOriginalName();
@@ -194,7 +186,6 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $variant = ProductVariant::findOrFail($id);
 
-        // ✅ POLICY
         $this->authorize('delete', $variant);
 
         if ($variant->image_url &&
@@ -209,11 +200,12 @@ new #[Layout('layouts.admin')] class extends Component
 ?>
 
 <div class="space-y-6 p-6">
+
     <h1 class="text-2xl font-bold mb-4">Product Variants</h1>
 
     @can('create', App\Models\ProductVariant::class)
         <button wire:click="openModal"
-            class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+            class="mb-4 px-4 py-2 bg-green-500 text-white rounded">
             Add New Variant
         </button>
     @endcan
@@ -223,6 +215,11 @@ new #[Layout('layouts.admin')] class extends Component
             <div class="w-1/12">ID</div>
             <div class="w-2/12">Name</div>
             <div class="w-2/12">Product</div>
+
+            @role('super admin')
+                <div class="w-2/12">Created By</div>
+            @endrole
+
             <div class="w-2/12">Price</div>
             <div class="w-1/12">Stock</div>
             <div class="w-2/12">Image</div>
@@ -234,12 +231,17 @@ new #[Layout('layouts.admin')] class extends Component
                 <div class="w-1/12">{{ $variant->id }}</div>
                 <div class="w-2/12">{{ $variant->name }}</div>
                 <div class="w-2/12">{{ $variant->product?->name }}</div>
+
+                @role('super admin')
+                    <div class="w-2/12">{{ $variant->product?->creator?->name }}</div>
+                @endrole
+
                 <div class="w-2/12">${{ number_format($variant->price, 2) }}</div>
                 <div class="w-1/12">{{ $variant->stock }}</div>
 
                 <div class="w-2/12">
                     @if ($variant->image_url)
-                        <img src="{{ route('product-variants.image', $variant->id) }}?{{ time() }}"
+                        <img src="{{ route('product-variants.image', $variant->id) }}?t={{ time() }}"
                              class="h-12 w-12 object-cover rounded">
                     @endif
                 </div>
@@ -247,14 +249,14 @@ new #[Layout('layouts.admin')] class extends Component
                 <div class="w-2/12 flex gap-2">
                     @can('update', $variant)
                         <button wire:click="openModal({{ $variant->id }})"
-                            class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                            class="px-3 py-1 bg-yellow-500 text-white rounded">
                             Edit
                         </button>
                     @endcan
 
                     @can('delete', $variant)
                         <button wire:click="deleteVariant({{ $variant->id }})"
-                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            class="px-3 py-1 bg-red-500 text-white rounded">
                             Delete
                         </button>
                     @endcan
@@ -263,10 +265,11 @@ new #[Layout('layouts.admin')] class extends Component
         @endforeach
     </div>
 
-    {{-- Modal --}}
+    {{-- MODAL (FIXED IMAGE PREVIEW) --}}
     @if ($modalOpen)
         <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div class="bg-white p-6 rounded shadow w-96 overflow-y-auto max-h-[80vh]">
+            <div class="bg-white p-6 rounded shadow w-96">
+
                 <h2 class="text-xl font-bold mb-4">
                     {{ $variantId ? 'Edit Variant' : 'Add Variant' }}
                 </h2>
@@ -278,47 +281,36 @@ new #[Layout('layouts.admin')] class extends Component
                     @endforeach
                 </select>
 
-                <input type="text" wire:model="name"
-                       class="border p-2 w-full mb-2"
-                       placeholder="Variant Name">
+                <input type="text" wire:model="name" class="border p-2 w-full mb-2">
+                <textarea wire:model="description" class="border p-2 w-full mb-2"></textarea>
 
-                <textarea wire:model="description"
-                          class="border p-2 w-full mb-2"
-                          placeholder="Variant Description"></textarea>
+                <input type="number" wire:model="price" class="border p-2 w-full mb-2">
+                <input type="number" wire:model="stock" class="border p-2 w-full mb-2">
 
-                <input type="number" step="0.01" wire:model="price"
-                       class="border p-2 w-full mb-2"
-                       placeholder="Price">
+                <input type="text" wire:model="sku" disabled class="border p-2 w-full mb-2">
 
-                <input type="number" wire:model="stock"
-                       class="border p-2 w-full mb-2"
-                       placeholder="Stock">
+                <input type="file" wire:model="imageFile" class="border p-2 w-full mb-4">
 
-                <input type="text" wire:model="sku" disabled
-                       class="border p-2 w-full mb-2"
-                       placeholder="SKU">
-
-                <input type="file" wire:model="imageFile"
-                       class="border p-2 w-full mb-4">
-
+                {{-- FIXED PREVIEW --}}
                 @if ($imageFile)
                     <img src="{{ $imageFile->temporaryUrl() }}" class="h-24 mb-4 rounded">
-                @elseif ($variantId && $variants->find($variantId)?->image_url)
-                    <img src="{{ route('product-variants.image', $variantId) }}?{{ time() }}"
+                @elseif ($variantId)
+                    <img src="{{ route('product-variants.image', $variantId) }}?t={{ time() }}"
                          class="h-24 mb-4 rounded">
                 @endif
 
                 <div class="flex justify-end gap-2">
                     <button wire:click="closeModal"
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        class="px-4 py-2 bg-gray-500 text-white rounded">
                         Cancel
                     </button>
 
                     <button wire:click="saveVariant"
-                        class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                        class="px-4 py-2 bg-green-500 text-white rounded">
                         {{ $variantId ? 'Update' : 'Add' }}
                     </button>
                 </div>
+
             </div>
         </div>
     @endif

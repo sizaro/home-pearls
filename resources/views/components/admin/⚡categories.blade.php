@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -23,15 +24,13 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $user = Auth::user();
 
-        // Super admin sees all
-        if ($user->hasRole('super admin')) {
-            $this->categories = Category::orderBy('id', 'desc')->get();
-        } else {
-            // Admin sees only their own
-            $this->categories = Category::where('created_by', $user->id)
-                ->orderBy('id', 'desc')
-                ->get();
+        $query = Category::with('creator')->orderBy('id', 'desc');
+
+        if (!$user->hasRole('super admin')) {
+            $query->where('created_by', $user->id);
         }
+
+        $this->categories = $query->get();
     }
 
     public function openModal($id = null)
@@ -39,13 +38,11 @@ new #[Layout('layouts.admin')] class extends Component
         if ($id) {
             $category = Category::findOrFail($id);
 
-            // ✅ POLICY CHECK
             $this->authorize('update', $category);
 
             $this->categoryId = $category->id;
             $this->name = $category->name;
         } else {
-            // ✅ POLICY CHECK (create)
             $this->authorize('create', Category::class);
 
             $this->resetFields();
@@ -74,28 +71,19 @@ new #[Layout('layouts.admin')] class extends Component
 
         $user = Auth::user();
 
-        // =========================
-        // UPDATE
-        // =========================
         if ($this->categoryId) {
 
             $category = Category::findOrFail($this->categoryId);
 
-            // ✅ POLICY CHECK
             $this->authorize('update', $category);
 
             $category->update([
                 'name' => $this->name,
                 'slug' => Str::slug($this->name),
             ]);
-        }
 
-        // =========================
-        // CREATE
-        // =========================
-        else {
+        } else {
 
-            // ✅ POLICY CHECK
             $this->authorize('create', Category::class);
 
             Category::create([
@@ -113,10 +101,10 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $category = Category::findOrFail($id);
 
-        // ✅ POLICY CHECK
         $this->authorize('delete', $category);
 
         $category->delete();
+
         $this->loadCategories();
     }
 };
@@ -126,26 +114,37 @@ new #[Layout('layouts.admin')] class extends Component
 
     <h1 class="text-2xl font-bold mb-4">Categories</h1>
 
-    {{-- Add Button --}}
     <button wire:click="openModal"
         class="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
         Add New Category
     </button>
 
-    {{-- Table --}}
     <div class="bg-white shadow rounded">
+
         <div class="flex font-bold border-b p-2">
             <div class="w-1/6">ID</div>
-            <div class="w-3/6">Name</div>
+            <div class="w-2/6">Name</div>
+
+            @role('super admin')
+                <div class="w-2/6">Created By</div>
+            @endrole
+
             <div class="w-2/6">Actions</div>
         </div>
 
         @foreach ($categories as $category)
             <div class="flex border-b p-2 items-center">
                 <div class="w-1/6">{{ $category->id }}</div>
-                <div class="w-3/6">{{ $category->name }}</div>
+                <div class="w-2/6">{{ $category->name }}</div>
+
+                @role('super admin')
+                    <div class="w-2/6">
+                        {{ $category->creator?->name ?? 'N/A' }}
+                    </div>
+                @endrole
 
                 <div class="w-2/6 flex gap-2">
+
                     @can('update', $category)
                         <button wire:click="openModal({{ $category->id }})"
                             class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
@@ -159,12 +158,14 @@ new #[Layout('layouts.admin')] class extends Component
                             Delete
                         </button>
                     @endcan
+
                 </div>
             </div>
         @endforeach
+
     </div>
 
-    {{-- Modal --}}
+    {{-- MODAL --}}
     @if ($modalOpen)
         <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div class="bg-white p-6 rounded shadow w-96">
@@ -173,7 +174,8 @@ new #[Layout('layouts.admin')] class extends Component
                     {{ $categoryId ? 'Edit Category' : 'Add Category' }}
                 </h2>
 
-                <input type="text" wire:model="name"
+                <input type="text"
+                    wire:model="name"
                     class="border p-2 w-full mb-4"
                     placeholder="Category Name">
 
@@ -192,4 +194,5 @@ new #[Layout('layouts.admin')] class extends Component
             </div>
         </div>
     @endif
+
 </div>

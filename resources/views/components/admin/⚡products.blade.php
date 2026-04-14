@@ -37,16 +37,13 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $user = Auth::user();
 
-        if ($user->hasRole('super admin')) {
-            $this->products = Product::with('category')
-                ->orderBy('id', 'desc')
-                ->get();
-        } else {
-            $this->products = Product::with('category')
-                ->where('created_by', $user->id)
-                ->orderBy('id', 'desc')
-                ->get();
+        $query = Product::with(['category', 'creator'])->latest();
+
+        if (!$user->hasRole('super admin')) {
+            $query->where('created_by', $user->id);
         }
+
+        $this->products = $query->get();
     }
 
     public function openModal($id = null)
@@ -62,9 +59,7 @@ new #[Layout('layouts.admin')] class extends Component
             $this->category_id = $product->category_id;
             $this->imageFile = null;
         } else {
-
             $this->authorize('create', Product::class);
-
             $this->resetFields();
         }
 
@@ -99,6 +94,9 @@ new #[Layout('layouts.admin')] class extends Component
 
         $user = Auth::user();
 
+        // =====================
+        // UPDATE
+        // =====================
         if ($this->productId) {
 
             $product = Product::findOrFail($this->productId);
@@ -116,8 +114,8 @@ new #[Layout('layouts.admin')] class extends Component
 
                 $filename = time() . '_' . $this->imageFile->getClientOriginalName();
                 $this->imageFile->storeAs('private/products', $filename);
-                $image_path = $filename;
 
+                $image_path = $filename;
                 $this->imageTimestamp = now()->timestamp;
             }
 
@@ -128,7 +126,12 @@ new #[Layout('layouts.admin')] class extends Component
                 'slug' => Str::slug($this->name),
                 'image_url' => $image_path,
             ]);
-        } else {
+
+        } 
+        // =====================
+        // CREATE
+        // =====================
+        else {
 
             $this->authorize('create', Product::class);
 
@@ -143,8 +146,6 @@ new #[Layout('layouts.admin')] class extends Component
                 'image_url' => $filename,
                 'created_by' => $user->id,
             ]);
-
-            $this->imageTimestamp = now()->timestamp;
         }
 
         $this->loadProducts();
@@ -169,6 +170,7 @@ new #[Layout('layouts.admin')] class extends Component
 ?>
 
 <div class="space-y-6 p-6">
+
     <h1 class="text-2xl font-bold mb-4">Products</h1>
 
     @can('create', App\Models\Product::class)
@@ -182,16 +184,25 @@ new #[Layout('layouts.admin')] class extends Component
         <div class="flex font-bold border-b p-2">
             <div class="w-1/12">ID</div>
             <div class="w-2/12">Name</div>
-            <div class="w-3/12">Category</div>
+            <div class="w-2/12">Category</div>
+
+            @role('super admin')
+                <div class="w-2/12">Created By</div>
+            @endrole
+
             <div class="w-3/12">Image</div>
-            <div class="w-3/12">Actions</div>
+            <div class="w-2/12">Actions</div>
         </div>
 
         @foreach ($products as $product)
             <div class="flex border-b p-2 items-center">
                 <div class="w-1/12">{{ $product->id }}</div>
                 <div class="w-2/12">{{ $product->name }}</div>
-                <div class="w-3/12">{{ $product->category?->name }}</div>
+                <div class="w-2/12">{{ $product->category?->name }}</div>
+
+                @role('super admin')
+                    <div class="w-2/12">{{ $product->creator?->name }}</div>
+                @endrole
 
                 <div class="w-3/12">
                     @if ($product->image_url)
@@ -202,17 +213,17 @@ new #[Layout('layouts.admin')] class extends Component
                     @endif
                 </div>
 
-                <div class="w-3/12 flex gap-2">
+                <div class="w-2/12 flex gap-2">
                     @can('update', $product)
                         <button wire:click="openModal({{ $product->id }})"
-                            class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                            class="px-3 py-1 bg-yellow-500 text-white rounded">
                             Edit
                         </button>
                     @endcan
 
                     @can('delete', $product)
                         <button wire:click="deleteProduct({{ $product->id }})"
-                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            class="px-3 py-1 bg-red-500 text-white rounded">
                             Delete
                         </button>
                     @endcan
@@ -221,19 +232,17 @@ new #[Layout('layouts.admin')] class extends Component
         @endforeach
     </div>
 
-    {{-- Modal --}}
+    {{-- MODAL --}}
     @if ($modalOpen)
         <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div class="bg-white p-6 rounded shadow w-96">
+
                 <h2 class="text-xl font-bold mb-4">
                     {{ $productId ? 'Edit Product' : 'Add Product' }}
                 </h2>
 
-                <input type="text" wire:model="name" placeholder="Product Name"
-                       class="border p-2 w-full mb-2">
-
-                <textarea wire:model="description" placeholder="Product Description"
-                          class="border p-2 w-full mb-2"></textarea>
+                <input type="text" wire:model="name" class="border p-2 w-full mb-2" placeholder="Name">
+                <textarea wire:model="description" class="border p-2 w-full mb-2" placeholder="Description"></textarea>
 
                 <select wire:model="category_id" class="border p-2 w-full mb-2">
                     <option value="">Select Category</option>
@@ -242,26 +251,20 @@ new #[Layout('layouts.admin')] class extends Component
                     @endforeach
                 </select>
 
-                <input type="file" wire:model="imageFile"
-                       class="border p-2 w-full mb-4">
-
-                @if ($imageFile)
-                    <img src="{{ $imageFile->temporaryUrl() }}" class="h-24 mb-4 rounded">
-                @elseif ($productId && $products->find($productId)?->image_url)
-                    <img src="{{ route('products.image', $productId) }}?t={{ $imageTimestamp ?? now()->timestamp }}"
-                         class="h-24 mb-4 rounded">
-                @endif
+                <input type="file" wire:model="imageFile" class="border p-2 w-full mb-4">
 
                 <div class="flex justify-end gap-2">
                     <button wire:click="closeModal"
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        class="px-4 py-2 bg-gray-500 text-white rounded">
                         Cancel
                     </button>
+
                     <button wire:click="saveProduct"
-                        class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                        class="px-4 py-2 bg-green-500 text-white rounded">
                         {{ $productId ? 'Update' : 'Add' }}
                     </button>
                 </div>
+
             </div>
         </div>
     @endif

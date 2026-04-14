@@ -88,6 +88,7 @@ new #[Layout('layouts.admin')] class extends Component
 
             $user->update($data);
 
+            // ✅ ensure only ONE role
             $user->syncRoles([$this->role]);
 
         } else {
@@ -98,7 +99,8 @@ new #[Layout('layouts.admin')] class extends Component
                 'password' => Hash::make($this->password),
             ]);
 
-            $user->assignRole($this->role);
+            // ✅ use syncRoles (not assignRole)
+            $user->syncRoles([$this->role]);
         }
 
         $this->closeModal();
@@ -107,9 +109,14 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function deleteUser($id)
     {
-        $user = User::findOrFail($id);
+        // 🔒 SUPER ADMIN ONLY
+        if (!auth()->user()->hasRole('super admin')) {
+            abort(403);
+        }
 
+        $user = User::findOrFail($id);
         $user->delete();
+
         $this->loadUsers();
     }
 };
@@ -118,6 +125,7 @@ new #[Layout('layouts.admin')] class extends Component
 <div class="space-y-6 p-6">
     <h1 class="text-2xl font-bold mb-4">Users</h1>
 
+    {{-- Add Button --}}
     <button wire:click="openModal"
         class="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
         Add User
@@ -140,15 +148,21 @@ new #[Layout('layouts.admin')] class extends Component
                 </div>
 
                 <div class="w-4/12 flex gap-2">
+
+                    {{-- Edit --}}
                     <button wire:click="openModal({{ $user->id }})"
                         class="px-3 py-1 bg-yellow-500 text-white rounded">
                         Edit
                     </button>
 
-                    <button wire:click="deleteUser({{ $user->id }})"
-                        class="px-3 py-1 bg-red-500 text-white rounded">
-                        Delete
-                    </button>
+                    {{-- 🔒 Delete only super admin --}}
+                    @if(auth()->user()?->hasRole('super admin'))
+                        <button wire:click="deleteUser({{ $user->id }})"
+                            class="px-3 py-1 bg-red-500 text-white rounded">
+                            Delete
+                        </button>
+                    @endif
+
                 </div>
             </div>
         @endforeach
@@ -163,24 +177,43 @@ new #[Layout('layouts.admin')] class extends Component
                     {{ $userId ? 'Edit User' : 'Add User' }}
                 </h2>
 
-                <input type="text" wire:model="name" class="border p-2 w-full mb-1" placeholder="Name">
-@error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                {{-- Name --}}
+                <input type="text" wire:model="name"
+                    class="border p-2 w-full mb-1"
+                    placeholder="Name">
+                @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-<input type="email" wire:model="email" class="border p-2 w-full mb-1" placeholder="Email">
-@error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                {{-- Email --}}
+                <input type="email" wire:model="email"
+                    class="border p-2 w-full mb-1"
+                    placeholder="Email">
+                @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-<input type="password" wire:model="password" class="border p-2 w-full mb-1" placeholder="Password">
-@error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                {{-- Password with SHOW/HIDE --}}
+                <div x-data="{ show: false }" class="relative">
+                    <input :type="show ? 'text' : 'password'"
+                        wire:model="password"
+                        class="border p-2 w-full mb-1 pr-12"
+                        placeholder="Password">
 
-<select wire:model="role" class="border p-2 w-full mb-1">
-    <option value="">Select Role</option>
-    @foreach($roles as $r)
-        <option value="{{ $r }}">{{ $r }}</option>
-    @endforeach
-</select>
-@error('role') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    <button type="button"
+                        @click="show = !show"
+                        class="absolute right-2 top-2 text-sm text-gray-600">
+                        <span x-text="show ? 'Hide' : 'Show'"></span>
+                    </button>
+                </div>
+                @error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                <div class="flex justify-end gap-2">
+                {{-- Role --}}
+                <select wire:model="role" class="border p-2 w-full mb-1">
+                    <option value="">Select Role</option>
+                    @foreach($roles as $r)
+                        <option value="{{ $r }}">{{ $r }}</option>
+                    @endforeach
+                </select>
+                @error('role') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                <div class="flex justify-end gap-2 mt-3">
                     <button wire:click="closeModal"
                         class="px-4 py-2 bg-gray-500 text-white rounded">
                         Cancel
