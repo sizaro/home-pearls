@@ -12,7 +12,6 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OtpCode;
-use Twilio\Rest\Client;
 
 new #[Layout('layouts.products')] class extends Component
 {
@@ -21,7 +20,7 @@ new #[Layout('layouts.products')] class extends Component
     public string $email = '';
     public string $whatsapp = '';
     public string $otpInput = '';
-    public string $selectedVerification = ''; // 'email' or 'whatsapp'
+    public string $selectedVerification = '';
 
     public bool $otpSent = false;
     public bool $otpVerified = false;
@@ -31,7 +30,6 @@ new #[Layout('layouts.products')] class extends Component
         $this->loadCart();
     }
 
-    // 🔥 Load Cart (reuse logic)
     public function loadCart()
     {
         if (Auth::check()) {
@@ -50,29 +48,34 @@ new #[Layout('layouts.products')] class extends Component
         }
     }
 
-    // 🔥 Total
     public function getTotalProperty()
     {
         if (!$this->cart) return 0;
-        return $this->cart->items->sum(fn($item) => $item->variant->price * $item->quantity);
+
+        return $this->cart->items->sum(
+            fn($item) => $item->variant->price * $item->quantity
+        );
     }
 
-    // 🔐 Send OTP
+    // ✅ EMAIL ONLY OTP (WhatsApp disabled safely)
     public function sendOtp($method)
     {
+        if ($method !== 'email') {
+            session()->flash('error', 'WhatsApp verification coming soon.');
+            return;
+        }
+
         $this->validate([
             'email' => 'required|email',
-            'whatsapp' => 'required|min:10'
         ]);
 
-        $this->selectedVerification = $method;
+        $this->selectedVerification = 'email';
         $otp = rand(100000, 999999);
 
-        // Save OTP to DB
         OtpCode::updateOrCreate(
             [
-                'contact_type' => $method,
-                'contact_value' => $method === 'email' ? $this->email : $this->whatsapp,
+                'contact_type' => 'email',
+                'contact_value' => $this->email,
             ],
             [
                 'otp' => $otp,
@@ -80,49 +83,33 @@ new #[Layout('layouts.products')] class extends Component
             ]
         );
 
-        // 🔹 Send OTP
-        if ($method === 'email') {
-            Mail::raw("Your OTP code: $otp", function ($message) {
-                $message->to($this->email)
-                        ->subject('Verify Your Email');
-            });
-        } else if ($method === 'whatsapp') {
-            $sid = env('TWILIO_SID');
-            $token = env('TWILIO_AUTH_TOKEN');
-            $twilio_number = env('TWILIO_WHATSAPP_NUMBER');
-            $client = new Client($sid, $token);
-            $client->messages->create(
-                "whatsapp:".$this->whatsapp,
-                [
-                    'from' => "whatsapp:$twilio_number",
-                    'body' => "Your OTP code: $otp"
-                ]
-            );
-        }
+        Mail::raw("Your OTP code: $otp", function ($message) {
+            $message->to($this->email)
+                    ->subject('Verify Your Email');
+        });
 
         $this->otpSent = true;
-        session()->flash('success', "OTP sent via $method.");
+        session()->flash('success', 'OTP sent to your email.');
     }
 
-    // 🔐 Verify OTP
     public function verifyOtp()
     {
-        $record = OtpCode::where('contact_type', $this->selectedVerification)
-            ->where('contact_value', $this->selectedVerification === 'email' ? $this->email : $this->whatsapp)
+        $record = OtpCode::where('contact_type', 'email')
+            ->where('contact_value', $this->email)
             ->where('otp', $this->otpInput)
             ->where('expires_at', '>', Carbon::now())
             ->first();
 
         if ($record) {
             $this->otpVerified = true;
-            $record->delete(); // remove OTP after successful verification
+            $record->delete();
+
             session()->flash('success', 'OTP verified!');
         } else {
             session()->flash('error', 'Invalid or expired OTP.');
         }
     }
 
-    // 🔥 Place Order
     public function placeOrder()
     {
         if (!$this->otpVerified) {
@@ -141,10 +128,10 @@ new #[Layout('layouts.products')] class extends Component
             'user_id' => Auth::id(),
             'guest_cart_id' => $this->cart->guest_cart_id,
             'email' => $this->email,
-            'whatsapp' => $this->whatsapp,
+            'whatsapp' => $this->whatsapp, // ✔ stored for later use
             'status' => 'pending',
             'total_amount' => $total,
-            'verified_contact_method' => $this->selectedVerification
+            'verified_contact_method' => 'email'
         ]);
 
         foreach ($this->cart->items as $item) {
@@ -159,7 +146,7 @@ new #[Layout('layouts.products')] class extends Component
         $this->cart->update(['status' => 'completed']);
         $this->cart->items()->delete();
 
-        $this->emit('cartUpdated');
+        $this->dispatch('cartUpdated');
 
         session()->put('order_total', $total);
         session()->put('order_id', $order->id);
@@ -174,7 +161,6 @@ new #[Layout('layouts.products')] class extends Component
 
     <h1 class="text-2xl font-bold">Checkout</h1>
 
-    {{-- CART SUMMARY --}}
     @if($cart && $cart->items->isNotEmpty())
         <div class="bg-white shadow rounded p-4 space-y-4">
             @foreach($cart->items as $item)
@@ -192,38 +178,55 @@ new #[Layout('layouts.products')] class extends Component
                     <p>Qty: {{ $item->quantity }}</p>
                 </div>
             @endforeach
+
             <div class="text-right font-bold text-xl">
                 Total: ${{ number_format($this->total, 2) }}
             </div>
         </div>
 
-        {{-- CONTACT + OTP --}}
         <div class="bg-white shadow rounded p-4 space-y-4">
+
             <input type="email" wire:model="email" placeholder="Email" class="w-full border px-3 py-2">
-            <input type="text" wire:model="whatsapp" placeholder="WhatsApp Number" class="w-full border px-3 py-2">
+            <input type="text" wire:model="whatsapp" placeholder="WhatsApp (optional)" class="w-full border px-3 py-2">
 
             @if(!$otpSent)
-                <div class="flex gap-4">
-                    <button wire:click="sendOtp('email')" class="bg-yellow-500 px-4 py-2 rounded">Verify Email</button>
-                    <button wire:click="sendOtp('whatsapp')" class="bg-green-500 text-white px-4 py-2 rounded">Verify WhatsApp</button>
-                </div>
+                <button wire:click="sendOtp('email')" 
+                    class="bg-yellow-500 px-4 py-2 rounded w-full">
+                    Verify Email
+                </button>
+
+                <p class="text-sm text-gray-500 text-center">
+                    WhatsApp verification coming soon
+                </p>
             @endif
 
             @if($otpSent && !$otpVerified)
                 <input type="text" wire:model="otpInput" placeholder="Enter OTP" class="w-full border px-3 py-2">
-                <button wire:click="verifyOtp" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Verify OTP</button>
+
+                <button wire:click="verifyOtp" 
+                    class="bg-blue-500 text-white px-4 py-2 rounded w-full">
+                    Verify OTP
+                </button>
             @endif
 
             @if($otpVerified)
-                <button wire:click="placeOrder" class="bg-black text-white px-6 py-2 rounded w-full">Place Order</button>
+                <button wire:click="placeOrder" 
+                    class="bg-black text-white px-6 py-2 rounded w-full">
+                    Place Order
+                </button>
             @endif
+
         </div>
     @else
         <p class="text-gray-500 text-center">Cart is empty.</p>
     @endif
 
-    {{-- FLASH --}}
-    @if(session()->has('success')) <p class="text-green-600">{{ session('success') }}</p> @endif
-    @if(session()->has('error')) <p class="text-red-600">{{ session('error') }}</p> @endif
+    @if(session()->has('success'))
+        <p class="text-green-600">{{ session('success') }}</p>
+    @endif
+
+    @if(session()->has('error'))
+        <p class="text-red-600">{{ session('error') }}</p>
+    @endif
 
 </div>
