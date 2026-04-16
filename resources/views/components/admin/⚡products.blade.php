@@ -28,10 +28,19 @@ new #[Layout('layouts.admin')] class extends Component
     public $imageTimestamp = null;
 
     public function mount()
-    {
-        $this->loadProducts();
-        $this->categories = Category::orderBy('name')->get();
+{
+    $this->loadProducts();
+
+    $user = Auth::user();
+
+    $query = Category::orderBy('name');
+
+    if (!$user->hasRole('super admin')) {
+        $query->where('created_by', $user->id);
     }
+
+    $this->categories = $query->get();
+}
 
     public function loadProducts()
     {
@@ -86,7 +95,16 @@ new #[Layout('layouts.admin')] class extends Component
         $this->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => [
+                    'required',
+                    Rule::exists('categories', 'id')->where(function ($query) {
+                        $user = Auth::user();
+
+                        if (!$user->hasRole('super admin')) {
+                            $query->where('created_by', $user->id);
+                        }
+                    }),
+                ],
             'imageFile' => $this->productId
                 ? 'nullable|image|max:2048'
                 : 'required|image|max:2048',
