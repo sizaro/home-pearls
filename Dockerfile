@@ -17,17 +17,25 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy project
 COPY . .
 
-# Install dependencies (fix memory issue)
+# Install dependencies
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
 
-# Fix permissions
+# Fix permissions (IMPORTANT FIX)
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
 
-# Point to Laravel public folder
+# Ensure Laravel log file exists
+RUN touch storage/logs/laravel.log
+
+# Point Apache to Laravel public folder
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
+
+# IMPORTANT: Render listens on 10000, but Apache must still serve correctly
+RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf || true
+RUN sed -i 's/:80/:${PORT}/g' /etc/apache2/sites-available/*.conf || true
 
 EXPOSE 10000
 
