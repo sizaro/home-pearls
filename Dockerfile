@@ -19,6 +19,12 @@ COPY . .
 # Install PHP dependencies
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
 
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+RUN npm install
+RUN npm run build
+
 # Create storage log file + fix permissions
 RUN mkdir -p storage/logs \
     && touch storage/logs/laravel.log \
