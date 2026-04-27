@@ -272,12 +272,10 @@ new #[Layout('layouts.admin')] class extends Component
                 <input type="file" wire:model="imageFile" class="border p-2 w-full mb-4">
 
                 {{-- FIXED PREVIEW --}}
-                @if ($imageFile)
-                    <img src="{{ $imageFile->temporaryUrl() }}" class="h-24 mb-4 rounded">
-                @elseif ($variantId)
-                    <img src="{{ route('products.image', $productId) }}?t={{ time() }}"
-                         class="h-24 mb-4 rounded">
-                @endif
+               @elseif ($productId)
+    <img src="{{ route('products.image', $productId) }}?t={{ now()->timestamp }}"
+         class="h-24 mb-4 rounded">
+@endif
 
                 <div class="flex justify-end gap-2">
                     <button wire:click="closeModal"

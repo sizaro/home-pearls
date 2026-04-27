@@ -11,7 +11,7 @@
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
     {{-- NAVBAR --}}
-    <livewire:nav-bar.nav-bar />
+    <livewire:nav-bar.admin-nav-bar />
 
     {{-- CONTENT AREA --}}
     <div class="flex flex-1 mt-1">
