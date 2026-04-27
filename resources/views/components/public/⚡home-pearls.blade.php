@@ -56,10 +56,11 @@ new #[Layout('layouts.public')] class extends Component
 };
 ?>
 
-<div class="space-y-10">
+
+<div class="space-y-12 bg-[#F5F1ED] min-h-screen px-6 py-10">
 
     {{-- ADVERT BANNER --}}
-    <div class="bg-yellow-100 border border-yellow-300 p-4 rounded text-center text-yellow-800">
+    <div class="bg-[#D4A373]/20 border border-[#D4A373]/40 p-4 rounded text-center text-[#5C3A21]">
         @foreach($this->adverts as $ad)
             <p>{{ $ad }}</p>
         @endforeach
@@ -67,12 +68,12 @@ new #[Layout('layouts.public')] class extends Component
 
     {{-- CATEGORIES --}}
     <div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Categories</h2>
+        <h2 class="text-2xl font-bold text-[#5C3A21] mb-4">Categories</h2>
 
         <div class="flex flex-wrap gap-3">
             @foreach($this->categories as $category)
                 <a href="/products?category={{ strtolower($category['name']) }}"
-                   class="px-4 py-2 bg-white border rounded hover:bg-gray-50">
+                   class="px-4 py-2 bg-white border border-[#EDE6DF] rounded hover:bg-[#F5F1ED] text-[#5C3A21] transition">
                     {{ $category['name'] }}
                 </a>
             @endforeach
@@ -81,31 +82,31 @@ new #[Layout('layouts.public')] class extends Component
 
     {{-- FEATURED PRODUCTS --}}
     <div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Featured Products</h2>
+        <h2 class="text-2xl font-bold text-[#5C3A21] mb-4">Featured Products</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             @foreach($this->featured as $product)
-                <div class="bg-white rounded shadow hover:shadow-lg transition p-4">
+                <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-4">
 
                     <img
-                src="{{ $product['image_url'] 
-                    ? route('products.image', ['id' => $product['id']]) 
-                    : 'https://via.placeholder.com/1200x500' }}"
-                class="w-full h-40 object-cover"
-            >
+                        src="{{ $product['image_url'] 
+                            ? route('products.image', ['id' => $product['id']]) 
+                            : 'https://via.placeholder.com/1200x500' }}"
+                        class="w-full h-40 object-cover rounded"
+                    >
 
-                    <h3 class="mt-3 font-semibold text-gray-800">
+                    <h3 class="mt-3 font-semibold text-[#5C3A21]">
                         {{ $product['name'] }}
                     </h3>
 
                     @if(!is_null($product['price']))
-                    <p class="mt-1 text-yellow-600 font-bold">
+                    <p class="mt-1 text-[#D4A373] font-bold">
                         ${{ number_format($product['price'], 2) }}
                     </p>
                     @endif
 
                     <a href="{{ route('products.show', $product['id']) }}"
-                       class="mt-3 w-full inline-block bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded text-center">
+                       class="mt-3 w-full inline-block bg-[#8B5E3C] hover:bg-[#5C3A21] text-white py-2 rounded text-center transition">
                         View
                     </a>
 
@@ -116,31 +117,31 @@ new #[Layout('layouts.public')] class extends Component
 
     {{-- TOP PRODUCTS --}}
     <div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Top Products</h2>
+        <h2 class="text-2xl font-bold text-[#5C3A21] mb-4">Top Products</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($this->top as $product)
-                <div class="bg-white rounded shadow p-4">
+                <div class="bg-white rounded-xl shadow p-4 hover:shadow-lg transition">
 
-                     <img
-                src="{{ $product['image_url'] 
-                    ? route('products.image', ['id' => $product['id']]) 
-                    : 'https://via.placeholder.com/1200x500' }}"
-                class="w-full h-40 object-cover"
-            >
+                    <img
+                        src="{{ $product['image_url'] 
+                            ? route('products.image', ['id' => $product['id']]) 
+                            : 'https://via.placeholder.com/1200x500' }}"
+                        class="w-full h-40 object-cover rounded"
+                    >
 
-                    <h3 class="mt-3 font-semibold text-gray-800">
+                    <h3 class="mt-3 font-semibold text-[#5C3A21]">
                         {{ $product['name'] }}
                     </h3>
 
                     @if(!is_null($product['price']))
-                    <p class="text-yellow-600 font-bold">
+                    <p class="text-[#D4A373] font-bold">
                         ${{ number_format($product['price'], 2) }}
                     </p>
                     @endif
 
                     <a href="{{ route('products.show', $product['id']) }}"
-                       class="mt-3 w-full inline-block bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded text-center">
+                       class="mt-3 w-full inline-block bg-[#8B5E3C] hover:bg-[#5C3A21] text-white py-2 rounded text-center transition">
                         View
                     </a>
 
