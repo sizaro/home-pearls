@@ -19,10 +19,15 @@ COPY . .
 # Install PHP dependencies
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
 
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+# Install Node.js (Vite requires Node 20+)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
-RUN npm install
+# Clean install to avoid npm bugs
+RUN rm -rf node_modules package-lock.json \
+    && npm install
+
+# Build frontend
 RUN npm run build
 
 # Create storage log file + fix permissions
