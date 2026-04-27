@@ -10,22 +10,21 @@ class LoginResponse implements LoginResponseContract
     {
         $user = $request->user();
 
+        if (!$user) {
+            return redirect('/login');
+        }
+
         return match (true) {
 
-            // 🔥 SUPER ADMIN
             $user->hasRole('super admin') => redirect()->route('admin.dashboard'),
 
-            // 🔥 ADMIN
             $user->hasRole('admin') => redirect()->route('admin.dashboard'),
 
-            // 🔥 EMPLOYEE
             $user->hasRole('employee') => redirect()->route('admin.dashboard'),
 
-            // 🔥 CUSTOMER (PUBLIC SIDE)
             $user->hasRole('customer') => redirect()->route('home-pearls'),
 
-            // 🔥 fallback (just in case)
-            default => redirect('/'),
+            default => redirect()->route('home-pearls'),
         };
     }
 }

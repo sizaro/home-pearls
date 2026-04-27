@@ -8,9 +8,7 @@ new class extends Component
 
     public function searchProducts()
     {
-        if (trim($this->search) === '') {
-            return;
-        }
+        if (trim($this->search) === '') return;
 
         return redirect()->route('products', [
             'search' => $this->search
@@ -19,135 +17,121 @@ new class extends Component
 };
 ?>
 
-<div x-data="{ open: false }" class="sticky top-0 z-50">
+<div
+    x-data="{ open: false }"
+    x-init="
+        $watch('open', value => {
+            document.body.style.overflow = value ? 'hidden' : 'auto'
+        })
+    "
+    class="relative z-50"
+>
 
-    {{-- NAVBAR --}}
-    <nav class="bg-white shadow-md border-b">
-
+    {{-- ================= NAVBAR ================= --}}
+    <nav class="bg-[#F5F1ED] border-b border-[#8B5E3C]/20 relative z-50">
         <div class="max-w-7xl mx-auto px-4">
 
-            {{-- MOBILE ROW --}}
-            <div class="flex items-center justify-between h-16 lg:hidden">
+            <div class="flex items-center justify-between h-16">
 
                 {{-- HAMBURGER --}}
-                <button @click="open = true" class="text-2xl">
+                <button
+                    @click="open = true"
+                    class="text-3xl text-[#8B5E3C] lg:hidden"
+                >
                     ☰
                 </button>
 
-                <a href="{{ route('home-pearls') }}" class="text-2xl font-bold">
+                {{-- BRAND --}}
+                <a href="{{ route('home-pearls') }}"
+                   class="text-xl font-bold text-[#8B5E3C]">
                     Home Pearls
                 </a>
 
-                <a href="#" class="text-2xl">
-                    👤
-                </a>
-
-            </div>
-
-            {{-- MOBILE SEARCH --}}
-            <div class="lg:hidden pb-4">
-                <form wire:submit.prevent="searchProducts">
-                    <div class="flex">
-                        <input
-                            type="text"
-                            wire:model.defer="search"
-                            placeholder="Search products..."
-                            class="flex-1 border px-4 py-2"
-                        >
-                        <button type="submit" class="bg-yellow-500 px-4">
-                            🔍
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            {{-- DESKTOP ROW --}}
-            <div class="hidden lg:flex items-center justify-between h-16">
-
-                {{-- LOGO --}}
-                <a href="{{ route('home-pearls') }}" class="text-2xl font-bold">
-                    Home Pearls
-                </a>
-
-                {{-- SEARCH --}}
-                <div class="flex-1 mx-6">
-                    <form wire:submit.prevent="searchProducts">
-                        <div class="flex">
-                            <input
-                                type="text"
-                                wire:model.defer="search"
-                                placeholder="Search beds, chairs..."
-                                class="flex-1 border px-4 py-2"
-                            >
-                            <button type="submit" class="bg-gray-100 px-6">
-                                🔍
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                {{-- CART (logic later) --}}
-                <livewire:common.cart-count />
-
-                {{-- ACCOUNT ICON WITH LOGIN/DASHBOARD --}}
-<div x-data="{ open: false }" class="relative ml-4">
-    {{-- Icon --}}
-    <button @click="open = !open" class="text-2xl">
-        👤
-    </button>
-
-    {{-- Dropdown --}}
-    <div 
-        x-show="open" 
-        @click.away="open = false"
-        x-transition
-        class="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50"
-    >
-        @if (Route::has('login'))
-            @auth
-                <a 
-                    href="{{ url('/dashboard') }}"
-                    class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                {{-- DESKTOP SEARCH --}}
+                <form
+                    wire:submit.prevent="searchProducts"
+                    class="hidden lg:flex flex-1 mx-6"
                 >
-                    Dashboard
-                </a>
-            @else
-                <a 
-                    href="{{ route('login') }}" 
-                    class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
-                >
-                    Log in
-                </a>
-                @if (Route::has('register'))
-                    <a 
-                        href="{{ route('register') }}" 
-                        class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                    <input
+                        type="text"
+                        wire:model.defer="search"
+                        placeholder="Search furniture..."
+                        class="w-full px-4 py-2 rounded-l border border-[#8B5E3C]/20 bg-white text-[#8B5E3C] focus:outline-none"
                     >
-                        Register
+                    <button class="bg-[#38BDF8] text-white px-5 rounded-r">
+                        🔍
+                    </button>
+                </form>
+
+                {{-- LOGIN ICON --}}
+                <div class="flex items-center gap-4">
+
+                    <a href="/login"
+                       class="text-[#8B5E3C] text-2xl hover:text-[#38BDF8] transition">
+                        👤
                     </a>
-                @endif
-            @endauth
-        @endif
-    </div>
-</div>
+
+                </div>
 
             </div>
 
         </div>
     </nav>
 
-    {{-- MOBILE SIDEBAR --}}
+    {{-- ================= BACKDROP (IMPORTANT FIX) ================= --}}
     <div
         x-show="open"
-        x-transition
-        @click.away="open = false"
-        class="fixed inset-0 z-50 flex">
+        x-transition.opacity
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+        @click="open = false"
+    ></div>
 
-        <div class="w-72 bg-white shadow-lg">
+    {{-- ================= SIDEBAR ================= --}}
+    <aside
+        x-show="open"
+        x-transition:enter="transition transform duration-300 ease-out"
+        x-transition:enter-start="-translate-x-full"
+        x-transition:enter-end="translate-x-0"
+        x-transition:leave="transition transform duration-200 ease-in"
+        x-transition:leave-start="translate-x-0"
+        x-transition:leave-end="-translate-x-full"
+
+        class="fixed top-0 left-0 h-full w-[80%] max-w-sm bg-[#8B5E3C] text-white shadow-2xl flex flex-col z-50"
+        @click.away="open = false"
+    >
+
+        {{-- HEADER --}}
+        <div class="flex justify-between items-center p-4 border-b border-white/20">
+            <h2 class="font-bold text-lg">Categories</h2>
+
+            <button
+                @click="open = false"
+                class="text-2xl"
+            >
+                ✕
+            </button>
+        </div>
+
+        {{-- SEARCH --}}
+        <div class="p-4 border-b border-white/10">
+            <form wire:submit.prevent="searchProducts" class="flex">
+                <input
+                    type="text"
+                    wire:model.defer="search"
+                    placeholder="Search..."
+                    class="w-full px-3 py-2 rounded-l text-[#8B5E3C] bg-[#F5F1ED] outline-none"
+                >
+                <button class="bg-[#38BDF8] text-white px-4 rounded-r">
+                    🔍
+                </button>
+            </form>
+        </div>
+
+        {{-- CONTENT --}}
+        <div class="p-4 overflow-y-auto flex-1">
             <livewire:public.side-bar />
         </div>
 
-        <div class="flex-1" @click="open = false"></div>
-    </div>
+    </aside>
 
 </div>

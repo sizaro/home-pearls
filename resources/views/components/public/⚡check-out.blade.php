@@ -157,68 +157,94 @@ new #[Layout('layouts.products')] class extends Component
 
 ?>
 
-<div class="max-w-4xl mx-auto p-4 space-y-6">
+
+<div class="min-h-screen bg-[#F6F1EB] text-[#3B2F2A] max-w-4xl mx-auto p-4 space-y-6">
 
     <h1 class="text-2xl font-bold">Checkout</h1>
 
     @if($cart && $cart->items->isNotEmpty())
-        <div class="bg-white shadow rounded p-4 space-y-4">
+
+        {{-- CART ITEMS --}}
+        <div class="bg-[#E7DED5] shadow rounded-xl p-4 space-y-4">
+
             @foreach($cart->items as $item)
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 border-b border-[#3B2F2A]/10 pb-3">
+
                     <img
                         src="{{ $item->variant->image_url 
                             ? route('product-variants.image', ['id' => $item->variant->id])
-                            : 'https://via.placeholder.com/300x200?text=No+Image' }}"
-                        class="w-full h-28 object-cover rounded mb-2"
+                            : 'https://via.placeholder.com/300x200' }}"
+                        class="w-20 h-20 object-cover rounded"
                     >
+
                     <div class="flex-1">
-                        <p>{{ $item->variant->name }}</p>
-                        <p class="text-yellow-600">${{ number_format($item->variant->price, 2) }}</p>
+                        <p class="font-medium">{{ $item->variant->name }}</p>
+                        <p class="text-[#38BDF8] font-semibold">
+                            ${{ number_format($item->variant->price, 2) }}
+                        </p>
                     </div>
-                    <p>Qty: {{ $item->quantity }}</p>
+
+                    <p class="text-sm">Qty: {{ $item->quantity }}</p>
+
                 </div>
             @endforeach
 
-            <div class="text-right font-bold text-xl">
+            <div class="text-right font-bold text-xl pt-2">
                 Total: ${{ number_format($this->total, 2) }}
             </div>
+
         </div>
 
-        <div class="bg-white shadow rounded p-4 space-y-4">
+        {{-- VERIFICATION FORM --}}
+        <div class="bg-[#E7DED5] shadow rounded-xl p-4 space-y-4">
 
-            <input type="email" wire:model="email" placeholder="Email" class="w-full border px-3 py-2">
-            <input type="text" wire:model="whatsapp" placeholder="WhatsApp (optional)" class="w-full border px-3 py-2">
+            <input type="email"
+                wire:model="email"
+                placeholder="Email"
+                class="w-full border border-[#3B2F2A]/20 px-3 py-2 rounded bg-[#F6F1EB] text-[#3B2F2A]"
+            >
+
+            <input type="text"
+                wire:model="whatsapp"
+                placeholder="WhatsApp (optional)"
+                class="w-full border border-[#3B2F2A]/20 px-3 py-2 rounded bg-[#F6F1EB] text-[#3B2F2A]"
+            >
 
             @if(!$otpSent)
-                <button wire:click="sendOtp('email')" 
-                    class="bg-yellow-500 px-4 py-2 rounded w-full">
+                <button wire:click="sendOtp('email')"
+                    class="bg-[#38BDF8] text-white px-4 py-2 rounded w-full font-semibold">
                     Verify Email
                 </button>
 
-                <p class="text-sm text-gray-500 text-center">
+                <p class="text-sm text-[#3B2F2A]/60 text-center">
                     WhatsApp verification coming soon
                 </p>
             @endif
 
             @if($otpSent && !$otpVerified)
-                <input type="text" wire:model="otpInput" placeholder="Enter OTP" class="w-full border px-3 py-2">
+                <input type="text"
+                    wire:model="otpInput"
+                    placeholder="Enter OTP"
+                    class="w-full border border-[#3B2F2A]/20 px-3 py-2 rounded bg-[#F6F1EB] text-[#3B2F2A]"
+                >
 
-                <button wire:click="verifyOtp" 
-                    class="bg-blue-500 text-white px-4 py-2 rounded w-full">
+                <button wire:click="verifyOtp"
+                    class="bg-[#38BDF8] text-white px-4 py-2 rounded w-full font-semibold">
                     Verify OTP
                 </button>
             @endif
 
             @if($otpVerified)
-                <button wire:click="placeOrder" 
-                    class="bg-black text-white px-6 py-2 rounded w-full">
+                <button wire:click="placeOrder"
+                    class="bg-[#3B2F2A] text-white px-6 py-2 rounded w-full font-semibold">
                     Place Order
                 </button>
             @endif
 
         </div>
+
     @else
-        <p class="text-gray-500 text-center">Cart is empty.</p>
+        <p class="text-[#3B2F2A]/60 text-center">Cart is empty.</p>
     @endif
 
     @if(session()->has('success'))

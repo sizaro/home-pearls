@@ -22,7 +22,6 @@ new #[Layout('layouts.products')] class extends Component
 
         $termWords = explode(' ', $term);
 
-        // Fetch all products from DB
         $allProducts = Product::with('category')->latest()->get();
 
         $results = [];
@@ -30,7 +29,6 @@ new #[Layout('layouts.products')] class extends Component
         foreach ($allProducts as $product) {
             $productName = strtolower($product->name);
 
-            // Check if any search word exists in product name
             foreach ($termWords as $word) {
                 if (str_contains($productName, $word)) {
                     $results[] = [
@@ -41,7 +39,7 @@ new #[Layout('layouts.products')] class extends Component
                         'image_url' => $product->image_url,
                         'description' => $product->short_description,
                     ];
-                    break; // stop checking other words for this product
+                    break;
                 }
             }
         }
@@ -51,19 +49,20 @@ new #[Layout('layouts.products')] class extends Component
 };
 ?>
 
-<div class="space-y-6">
+<div class="space-y-6 px-4 py-6 text-[#3B2F2A]">
 
-    <h1 class="text-2xl font-bold mb-6">
+    <h1 class="text-2xl font-bold mb-6 text-[#8B5E3C]">
         Results for "{{ $search }}"
     </h1>
 
     @if(empty($this->filteredProducts))
-        <p class="text-gray-500">No products found.</p>
+        <p class="text-[#3B2F2A]/60">No products found.</p>
     @else
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
             @foreach($this->filteredProducts as $product)
                 <a href="{{ route('products.show', $product['id']) }}"
-                   class="block bg-white rounded shadow hover:shadow-lg transition overflow-hidden">
+                   class="block bg-[#F5F1ED] border border-[#8B5E3C]/20 rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
 
                     <img
                         src="{{ $product['image_url'] 
@@ -73,12 +72,23 @@ new #[Layout('layouts.products')] class extends Component
                     >
 
                     <div class="p-4">
-                        <h3 class="font-semibold text-gray-800">{{ $product['name'] }}</h3>
-                        <p class="text-gray-500 text-sm">{{ $product['category'] }}</p>
-                        <span class="mt-3 inline-block text-yellow-600 font-medium">View Product</span>
+
+                        <h3 class="font-semibold text-[#3B2F2A]">
+                            {{ $product['name'] }}
+                        </h3>
+
+                        <p class="text-[#3B2F2A]/60 text-sm">
+                            {{ $product['category'] }}
+                        </p>
+
+                        <span class="mt-3 inline-block text-[#38BDF8] font-medium">
+                            View Product
+                        </span>
+
                     </div>
                 </a>
             @endforeach
+
         </div>
     @endif
 

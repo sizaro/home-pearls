@@ -50,61 +50,81 @@ new #[Layout('layouts.admin')] class extends Component
     public function selectOrder($id)
     {
         $this->selectedOrderId = $id;
-
-        // 🔥 KEEP YOUR WORKING REMOUNT SYSTEM
         $this->orderViewToken++;
     }
 };
 ?>
 
-<div class="max-w-6xl mx-auto p-4 space-y-4">
+<div class="max-w-6xl mx-auto p-4 space-y-4 bg-[#F6F1EB] text-[#3B2F2A] min-h-screen">
 
-    <h1 class="text-2xl font-bold">Orders</h1>
+    <h1 class="text-2xl font-bold text-[#3B2F2A]">Orders</h1>
 
     {{-- STATUS TABS --}}
-    <div class="flex gap-2 mb-4">
+    <div class="flex gap-2 mb-4 flex-wrap">
+
         @foreach($statuses as $status)
             <button
                 wire:click="setTab('{{ $status }}')"
-                class="px-3 py-1 rounded text-sm
-                {{ $activeTab === $status ? 'bg-black text-white' : 'bg-gray-200' }}">
+                class="px-3 py-1 rounded-lg text-sm transition
+                {{ $activeTab === $status 
+                    ? 'bg-[#3B2F2A] text-white' 
+                    : 'bg-white text-[#3B2F2A] border border-[#3B2F2A]/10' }}">
                 {{ ucfirst($status) }}
             </button>
         @endforeach
+
     </div>
 
     {{-- TABLE --}}
-    <table class="w-full text-sm bg-white shadow rounded">
-        <thead>
-            <tr class="bg-gray-100">
-                <th class="p-2 text-left">Order</th>
-                <th class="p-2 text-left">Customer</th>
-                <th class="p-2 text-left">Total</th>
-                <th class="p-2 text-left">Status</th>
-                <th class="p-2 text-left">Action</th>
-            </tr>
-        </thead>
+    <div class="bg-white shadow rounded-xl overflow-hidden border border-[#3B2F2A]/10">
 
-        <tbody>
-            @foreach($orders as $order)
-                <tr class="border-t">
-                    <td class="p-2">#{{ $order->id }}</td>
-                    <td class="p-2">{{ $order->email }}</td>
-                    <td class="p-2">${{ number_format($order->total_amount, 2) }}</td>
-                    <td class="p-2">{{ ucfirst($order->status) }}</td>
-                    <td class="p-2">
-                        <button
-                            wire:click="selectOrder({{ $order->id }})"
-                            class="px-3 py-1 bg-red-600 text-white text-xs rounded">
-                            View
-                        </button>
-                    </td>
+        <table class="w-full text-sm">
+
+            <thead class="bg-[#E7DED5] text-[#3B2F2A]">
+                <tr>
+                    <th class="p-3 text-left">Order</th>
+                    <th class="p-3 text-left">Customer</th>
+                    <th class="p-3 text-left">Total</th>
+                    <th class="p-3 text-left">Status</th>
+                    <th class="p-3 text-left">Action</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
 
-    {{-- 🔥 CHILD COMPONENT (YOUR TOKEN SYSTEM KEPT) --}}
+            <tbody>
+                @foreach($orders as $order)
+                    <tr class="border-t border-[#3B2F2A]/10 hover:bg-[#F6F1EB] transition">
+
+                        <td class="p-3 font-semibold">#{{ $order->id }}</td>
+
+                        <td class="p-3 text-[#3B2F2A]/80">{{ $order->email }}</td>
+
+                        <td class="p-3 text-[#38BDF8] font-semibold">
+                            ${{ number_format($order->total_amount, 2) }}
+                        </td>
+
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs bg-[#E7DED5] text-[#3B2F2A]">
+                                {{ ucfirst($order->status) }}
+                            </span>
+                        </td>
+
+                        <td class="p-3">
+                            <button
+                                wire:click="selectOrder({{ $order->id }})"
+                                class="px-3 py-1 bg-[#38BDF8] text-white text-xs rounded-lg hover:opacity-90">
+                                View
+                            </button>
+                        </td>
+
+                    </tr>
+                @endforeach
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {{-- CHILD COMPONENT --}}
     <livewire:admin.order-view
         :orderId="$selectedOrderId"
         :key="'order-'.$orderViewToken"

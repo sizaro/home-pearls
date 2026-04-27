@@ -201,17 +201,18 @@ new #[Layout('layouts.admin')] class extends Component
 
 <div class="space-y-6 p-6">
 
-    <h1 class="text-2xl font-bold mb-4">Product Variants</h1>
+    <h1 class="text-2xl font-bold mb-4 text-[#3B2F2A]">Product Variants</h1>
 
     @can('create', App\Models\ProductVariant::class)
         <button wire:click="openModal"
-            class="mb-4 px-4 py-2 bg-green-500 text-white rounded">
+            class="mb-4 px-4 py-2 bg-[#38BDF8] text-white rounded">
             Add New Variant
         </button>
     @endcan
 
     <div class="bg-white shadow rounded">
-        <div class="flex font-bold border-b p-2">
+
+        <div class="flex font-bold border-b p-2 bg-[#F6F1EB] text-[#3B2F2A]">
             <div class="w-1/12">ID</div>
             <div class="w-2/12">Name</div>
             <div class="w-2/12">Product</div>
@@ -227,7 +228,8 @@ new #[Layout('layouts.admin')] class extends Component
         </div>
 
         @foreach ($variants as $variant)
-            <div class="flex border-b p-2 items-center">
+            <div class="flex border-b p-2 items-center text-[#3B2F2A]">
+
                 <div class="w-1/12">{{ $variant->id }}</div>
                 <div class="w-2/12">{{ $variant->name }}</div>
                 <div class="w-2/12">{{ $variant->product?->name }}</div>
@@ -236,20 +238,24 @@ new #[Layout('layouts.admin')] class extends Component
                     <div class="w-2/12">{{ $variant->product?->creator?->name }}</div>
                 @endrole
 
-                <div class="w-2/12">${{ number_format($variant->price, 2) }}</div>
+                <div class="w-2/12 text-[#38BDF8]">
+                    ${{ number_format($variant->price, 2) }}
+                </div>
+
                 <div class="w-1/12">{{ $variant->stock }}</div>
 
                 <div class="w-2/12">
                     @if ($variant->image_url)
                         <img src="{{ route('product-variants.image', $variant->id) }}?t={{ time() }}"
-                             class="h-12 w-12 object-cover rounded">
+                             class="h-12 w-12 object-cover rounded border border-[#E7DED5]">
                     @endif
                 </div>
 
                 <div class="w-2/12 flex gap-2">
+
                     @can('update', $variant)
                         <button wire:click="openModal({{ $variant->id }})"
-                            class="px-3 py-1 bg-yellow-500 text-white rounded">
+                            class="px-3 py-1 bg-[#38BDF8] text-white rounded">
                             Edit
                         </button>
                     @endcan
@@ -260,58 +266,35 @@ new #[Layout('layouts.admin')] class extends Component
                             Delete
                         </button>
                     @endcan
+
                 </div>
             </div>
         @endforeach
+
     </div>
 
-    {{-- MODAL (FIXED IMAGE PREVIEW) --}}
     @if ($modalOpen)
         <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div class="bg-white p-6 rounded shadow w-96">
+
+            <div class="bg-[#F6F1EB] p-6 rounded shadow w-96 text-[#3B2F2A]">
 
                 <h2 class="text-xl font-bold mb-4">
                     {{ $variantId ? 'Edit Variant' : 'Add Variant' }}
                 </h2>
 
-                <select wire:model="product_id" class="border p-2 w-full mb-2">
-                    <option value="">Select Product</option>
-                    @foreach($products as $prod)
-                        <option value="{{ $prod->id }}">{{ $prod->name }}</option>
-                    @endforeach
-                </select>
+                <button wire:click="closeModal"
+                    class="px-4 py-2 bg-[#3B2F2A] text-white rounded">
+                    Cancel
+                </button>
 
-                <input type="text" wire:model="name" class="border p-2 w-full mb-2">
-                <textarea wire:model="description" class="border p-2 w-full mb-2"></textarea>
-
-                <input type="number" wire:model="price" class="border p-2 w-full mb-2">
-                <input type="number" wire:model="stock" class="border p-2 w-full mb-2">
-
-                <input type="text" wire:model="sku" disabled class="border p-2 w-full mb-2">
-
-                <input type="file" wire:model="imageFile" class="border p-2 w-full mb-4">
-
-                {{-- FIXED PREVIEW --}}
-                @if ($imageFile)
-                    <img src="{{ $imageFile->temporaryUrl() }}" class="h-24 mb-4 rounded">
-                @elseif ($variantId)
-                    <img src="{{ route('product-variants.image', $variantId) }}?t={{ time() }}"
-                         class="h-24 mb-4 rounded">
-                @endif
-
-                <div class="flex justify-end gap-2">
-                    <button wire:click="closeModal"
-                        class="px-4 py-2 bg-gray-500 text-white rounded">
-                        Cancel
-                    </button>
-
-                    <button wire:click="saveVariant"
-                        class="px-4 py-2 bg-green-500 text-white rounded">
-                        {{ $variantId ? 'Update' : 'Add' }}
-                    </button>
-                </div>
+                <button wire:click="saveVariant"
+                    class="px-4 py-2 bg-[#38BDF8] text-white rounded">
+                    {{ $variantId ? 'Update' : 'Add' }}
+                </button>
 
             </div>
+
         </div>
     @endif
+
 </div>

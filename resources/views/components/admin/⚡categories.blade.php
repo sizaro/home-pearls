@@ -110,18 +110,20 @@ new #[Layout('layouts.admin')] class extends Component
 };
 ?>
 
-<div class="space-y-6 p-6">
+<div class="space-y-6 p-6 bg-[#F5F1ED] text-[#3B2F2A]">
 
-    <h1 class="text-2xl font-bold mb-4">Categories</h1>
+    <h1 class="text-2xl font-bold mb-4 text-[#8B5E3C]">
+        Categories
+    </h1>
 
     <button wire:click="openModal"
-        class="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        class="mb-4 px-4 py-2 bg-[#38BDF8] text-white rounded-lg hover:opacity-90 transition">
         Add New Category
     </button>
 
-    <div class="bg-white shadow rounded">
+    <div class="bg-white border border-[#8B5E3C]/20 shadow rounded-xl">
 
-        <div class="flex font-bold border-b p-2">
+        <div class="flex font-bold border-b border-[#8B5E3C]/20 p-3 text-[#8B5E3C]">
             <div class="w-1/6">ID</div>
             <div class="w-2/6">Name</div>
 
@@ -133,12 +135,16 @@ new #[Layout('layouts.admin')] class extends Component
         </div>
 
         @foreach ($categories as $category)
-            <div class="flex border-b p-2 items-center">
+            <div class="flex border-b border-[#8B5E3C]/10 p-3 items-center">
+
                 <div class="w-1/6">{{ $category->id }}</div>
-                <div class="w-2/6">{{ $category->name }}</div>
+
+                <div class="w-2/6 text-[#3B2F2A]">
+                    {{ $category->name }}
+                </div>
 
                 @role('super admin')
-                    <div class="w-2/6">
+                    <div class="w-2/6 text-[#3B2F2A]/70">
                         {{ $category->creator?->name ?? 'N/A' }}
                     </div>
                 @endrole
@@ -147,19 +153,20 @@ new #[Layout('layouts.admin')] class extends Component
 
                     @can('update', $category)
                         <button wire:click="openModal({{ $category->id }})"
-                            class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                            class="px-3 py-1 bg-[#38BDF8] text-white rounded hover:opacity-90">
                             Edit
                         </button>
                     @endcan
 
                     @can('delete', $category)
                         <button wire:click="deleteCategory({{ $category->id }})"
-                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            class="px-3 py-1 bg-red-500 text-white rounded hover:opacity-90">
                             Delete
                         </button>
                     @endcan
 
                 </div>
+
             </div>
         @endforeach
 
@@ -167,31 +174,35 @@ new #[Layout('layouts.admin')] class extends Component
 
     {{-- MODAL --}}
     @if ($modalOpen)
-        <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div class="bg-white p-6 rounded shadow w-96">
+        <div class="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
 
-                <h2 class="text-xl font-bold mb-4">
+            <div class="bg-[#F5F1ED] border border-[#8B5E3C]/20 p-6 rounded-xl w-96">
+
+                <h2 class="text-xl font-bold mb-4 text-[#8B5E3C]">
                     {{ $categoryId ? 'Edit Category' : 'Add Category' }}
                 </h2>
 
                 <input type="text"
                     wire:model="name"
-                    class="border p-2 w-full mb-4"
+                    class="border border-[#8B5E3C]/20 p-2 w-full mb-4 rounded bg-white text-[#3B2F2A]"
                     placeholder="Category Name">
 
                 <div class="flex justify-end gap-2">
+
                     <button wire:click="closeModal"
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        class="px-4 py-2 bg-[#8B5E3C] text-white rounded hover:opacity-90">
                         Cancel
                     </button>
 
                     <button wire:click="saveCategory"
-                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        class="px-4 py-2 bg-[#38BDF8] text-white rounded hover:opacity-90">
                         {{ $categoryId ? 'Update' : 'Add' }}
                     </button>
+
                 </div>
 
             </div>
+
         </div>
     @endif
 

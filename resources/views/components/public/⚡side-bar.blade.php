@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-use App\Models\Category; // make sure this exists
+use App\Models\Category;
 
 new class extends Component
 {
@@ -9,26 +9,42 @@ new class extends Component
 
     public function mount()
     {
-        // Fetch all categories from the database, ordered by name
         $this->categories = Category::orderBy('name')->get();
     }
 };
 ?>
 
-<aside class="w-64 bg-white border-r h-screen sticky top-0 flex flex-col">
+<aside
+    class="
+        w-64
+        flex-col
+        h-screen sticky top-0
+        bg-[#8B5E3C]
+        text-white
+    "
+>
 
-    <div class="p-6 font-bold text-xl border-b">
-        Product Categories
-    </div>
+    {{-- ================= NAV ================= --}}
+    <nav class="p-4 space-y-2 overflow-y-auto flex-1">
 
-    <nav class="p-4 space-y-1 text-gray-700 overflow-y-auto flex-1">
-
-        @foreach($categories as $category)
-            <a href="{{ route('categories.show', $category->slug) }}"
-               class="block px-4 py-2 rounded hover:bg-gray-100">
+        @forelse($categories as $category)
+            <a
+                href="{{ route('categories.show', $category->slug) }}"
+                class="
+                    block px-4 py-3 rounded-lg
+                    text-white/90
+                    hover:bg-[#D4A373]/30
+                    hover:text-white
+                    transition
+                "
+            >
                 {{ $category->name }}
             </a>
-        @endforeach
+        @empty
+            <p class="text-white/70 text-sm">
+                No categories found
+            </p>
+        @endforelse
 
     </nav>
 

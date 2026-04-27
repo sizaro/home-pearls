@@ -28,15 +28,12 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function loadData()
     {
-        // Stats
         $this->categoriesCount = Category::count();
         $this->productsCount   = Product::count();
         $this->variantsCount   = ProductVariant::count();
 
-        // Orders
         $this->newOrdersCount = Order::where('status', 'pending')->count();
 
-        // Charts
         $this->productsPerCategory = Category::withCount('products')
             ->get()
             ->pluck('products_count', 'name')
@@ -48,98 +45,99 @@ new #[Layout('layouts.admin')] class extends Component
             ->toArray();
     }
 
-    // Optional: Live refresh every X seconds
     public function getListeners(): array
     {
         return [
             "echo-private:admin-orders,OrderUpdated" => 'loadData'
         ];
     }
-}
+};
 ?>
 
-<div class="space-y-8 p-6">
+<div class="space-y-8 p-6 bg-[#F6F1EB] min-h-screen text-[#3B2F2A]">
 
-    {{-- PAGE TITLE --}}
+    {{-- TITLE --}}
     <div>
-        <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-        <p class="text-gray-500">Manage your store and track statistics</p>
+        <h1 class="text-3xl font-bold text-[#3B2F2A]">Admin Dashboard</h1>
+        <p class="text-[#3B2F2A]/60">Manage your store and track statistics</p>
     </div>
 
     {{-- STATS --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded shadow">
-    <h2 class="text-gray-500">New Orders</h2>
-    <p class="text-3xl font-bold">{{ $newOrdersCount }}</p>
-    <a href="{{ route('admin.orders') }}"
-       class="mt-2 inline-block bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
-       View Orders
-    </a>
-</div>
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-gray-500">Categories</h2>
-            <p class="text-3xl font-bold">{{ $categoriesCount }}</p>
+
+        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+            <h2 class="text-[#3B2F2A]/60">New Orders</h2>
+            <p class="text-3xl font-bold text-[#38BDF8]">{{ $newOrdersCount }}</p>
+
+            <a href="{{ route('admin.orders') }}"
+               class="mt-3 inline-block bg-[#38BDF8] text-white px-4 py-2 rounded-lg hover:opacity-90">
+                View Orders
+            </a>
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-gray-500">Products</h2>
-            <p class="text-3xl font-bold">{{ $productsCount }}</p>
+        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+            <h2 class="text-[#3B2F2A]/60">Categories</h2>
+            <p class="text-3xl font-bold text-[#3B2F2A]">{{ $categoriesCount }}</p>
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-gray-500">Variants</h2>
-            <p class="text-3xl font-bold">{{ $variantsCount }}</p>
+        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+            <h2 class="text-[#3B2F2A]/60">Products</h2>
+            <p class="text-3xl font-bold text-[#3B2F2A]">{{ $productsCount }}</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+            <h2 class="text-[#3B2F2A]/60">Variants</h2>
+            <p class="text-3xl font-bold text-[#3B2F2A]">{{ $variantsCount }}</p>
         </div>
     </div>
 
     {{-- QUICK ACTIONS --}}
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+    <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+        <h2 class="text-xl font-bold text-[#3B2F2A] mb-4">Quick Actions</h2>
 
         <div class="flex flex-wrap gap-4">
+
             <a href="{{ route('admin.categories') }}"
-               class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+               class="bg-[#3B2F2A] text-white px-4 py-2 rounded-lg hover:opacity-90">
                 Manage Categories
             </a>
 
             <a href="{{ route('admin.products') }}"
-               class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+               class="bg-[#38BDF8] text-white px-4 py-2 rounded-lg hover:opacity-90">
                 Manage Products
             </a>
 
             <a href="{{ route('admin.product-variants') }}"
-               class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+               class="bg-[#8B5E3C] text-white px-4 py-2 rounded-lg hover:opacity-90">
                 Manage Variants
             </a>
 
             @role('super admin')
             <a href="{{ route('admin.users') }}"
-            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+               class="bg-[#E7DED5] text-[#3B2F2A] px-4 py-2 rounded-lg hover:opacity-90">
                 Manage Users
             </a>
             @endrole
+
         </div>
     </div>
 
     {{-- CHARTS --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {{-- Products per Category (Pie) --}}
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-bold mb-4">Products per Category</h2>
+        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+            <h2 class="text-xl font-bold mb-4 text-[#3B2F2A]">Products per Category</h2>
             <canvas id="productsPerCategory" class="w-full h-64"></canvas>
         </div>
 
-        {{-- Variants per Product (Bar) --}}
-        <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-xl font-bold mb-4">Variants per Product</h2>
+        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+            <h2 class="text-xl font-bold mb-4 text-[#3B2F2A]">Variants per Product</h2>
             <canvas id="variantsPerProduct" class="w-full h-64"></canvas>
         </div>
 
     </div>
 </div>
 
-{{-- CHARTS SCRIPT --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let pieChart, barChart;
@@ -147,27 +145,30 @@ let pieChart, barChart;
 document.addEventListener('livewire:load', function () {
     updateCharts(@json($productsPerCategory), @json($variantsPerProduct));
 
-    Livewire.hook('message.processed', (message, component) => {
+    Livewire.hook('message.processed', () => {
         updateCharts(@this.productsPerCategory, @this.variantsPerProduct);
     });
 });
 
 function updateCharts(productsPerCategory, variantsPerProduct) {
+
     const pieCtx = document.getElementById('productsPerCategory').getContext('2d');
-    if(pieChart) pieChart.destroy();
+    if (pieChart) pieChart.destroy();
+
     pieChart = new Chart(pieCtx, {
         type: 'pie',
         data: {
             labels: Object.keys(productsPerCategory),
             datasets: [{
                 data: Object.values(productsPerCategory),
-                backgroundColor: ['#f87171', '#60a5fa', '#34d399', '#a78bfa'],
+                backgroundColor: ['#38BDF8', '#8B5E3C', '#3B2F2A', '#E7DED5'],
             }]
         }
     });
 
     const barCtx = document.getElementById('variantsPerProduct').getContext('2d');
-    if(barChart) barChart.destroy();
+    if (barChart) barChart.destroy();
+
     barChart = new Chart(barCtx, {
         type: 'bar',
         data: {
@@ -175,11 +176,14 @@ function updateCharts(productsPerCategory, variantsPerProduct) {
             datasets: [{
                 label: 'Number of Variants',
                 data: Object.values(variantsPerProduct),
-                backgroundColor: '#60a5fa'
+                backgroundColor: '#38BDF8'
             }]
         },
-        options: { scales: { y: { beginAtZero: true } } }
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
     });
 }
-
 </script>

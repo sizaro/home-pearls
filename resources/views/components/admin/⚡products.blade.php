@@ -187,19 +187,20 @@ new #[Layout('layouts.admin')] class extends Component
 };
 ?>
 
-<div class="space-y-6 p-6">
+<div class="space-y-6 p-6 bg-[#F6F1EB] text-[#3B2F2A]">
 
     <h1 class="text-2xl font-bold mb-4">Products</h1>
 
     @can('create', App\Models\Product::class)
         <button wire:click="openModal"
-            class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+            class="mb-4 px-4 py-2 bg-[#38BDF8] text-white rounded hover:opacity-90">
             Add New Product
         </button>
     @endcan
 
-    <div class="bg-white shadow rounded">
-        <div class="flex font-bold border-b p-2">
+    <div class="bg-white shadow rounded border border-[#E7DED5]">
+
+        <div class="flex font-bold border-b p-2 bg-[#F6F1EB] text-[#3B2F2A]">
             <div class="w-1/12">ID</div>
             <div class="w-2/12">Name</div>
             <div class="w-2/12">Category</div>
@@ -213,7 +214,8 @@ new #[Layout('layouts.admin')] class extends Component
         </div>
 
         @foreach ($products as $product)
-            <div class="flex border-b p-2 items-center">
+            <div class="flex border-b p-2 items-center text-[#3B2F2A]">
+
                 <div class="w-1/12">{{ $product->id }}</div>
                 <div class="w-2/12">{{ $product->name }}</div>
                 <div class="w-2/12">{{ $product->category?->name }}</div>
@@ -225,16 +227,17 @@ new #[Layout('layouts.admin')] class extends Component
                 <div class="w-3/12">
                     @if ($product->image_url)
                         <img src="{{ route('products.image', $product->id) }}?t={{ $imageTimestamp ?? now()->timestamp }}"
-                             class="h-12 w-12 object-cover rounded">
+                             class="h-12 w-12 object-cover rounded border border-[#E7DED5]">
                     @else
-                        <span class="text-gray-400">No Image</span>
+                        <span class="text-[#3B2F2A]/50">No Image</span>
                     @endif
                 </div>
 
                 <div class="w-2/12 flex gap-2">
+
                     @can('update', $product)
                         <button wire:click="openModal({{ $product->id }})"
-                            class="px-3 py-1 bg-yellow-500 text-white rounded">
+                            class="px-3 py-1 bg-[#38BDF8] text-white rounded">
                             Edit
                         </button>
                     @endcan
@@ -245,51 +248,70 @@ new #[Layout('layouts.admin')] class extends Component
                             Delete
                         </button>
                     @endcan
+
                 </div>
             </div>
         @endforeach
+
     </div>
 
     {{-- MODAL --}}
     @if ($modalOpen)
         <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div class="bg-white p-6 rounded shadow w-96">
+
+            <div class="bg-[#F6F1EB] p-6 rounded shadow w-96 text-[#3B2F2A]">
 
                 <h2 class="text-xl font-bold mb-4">
                     {{ $productId ? 'Edit Product' : 'Add Product' }}
                 </h2>
 
-                <input type="text" wire:model="name" class="border p-2 w-full mb-2" placeholder="Name">
-                <textarea wire:model="description" class="border p-2 w-full mb-2" placeholder="Description"></textarea>
+                <input type="text"
+                    wire:model="name"
+                    class="border border-[#E7DED5] p-2 w-full mb-2 rounded">
 
-                <select wire:model="category_id" class="border p-2 w-full mb-2">
+                <textarea
+                    wire:model="description"
+                    class="border border-[#E7DED5] p-2 w-full mb-2 rounded">
+                </textarea>
+
+                <select wire:model="category_id"
+                    class="border border-[#E7DED5] p-2 w-full mb-2 rounded">
+
                     <option value="">Select Category</option>
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                     @endforeach
                 </select>
 
-                <input type="file" wire:model="imageFile" class="border p-2 w-full mb-4">
+                <input type="file"
+                    wire:model="imageFile"
+                    class="border border-[#E7DED5] p-2 w-full mb-4 rounded">
 
-                {{-- FIXED PREVIEW --}}
-               @elseif ($productId)
-    <img src="{{ route('products.image', $productId) }}?t={{ now()->timestamp }}"
-         class="h-24 mb-4 rounded">
-@endif
+                {{-- PREVIEW --}}
+                @if ($imageFile)
+                    <img src="{{ $imageFile->temporaryUrl() }}"
+                         class="h-24 mb-4 rounded border border-[#E7DED5]">
+                @elseif ($productId)
+                    <img src="{{ route('products.image', $productId) }}?t={{ now()->timestamp }}"
+                         class="h-24 mb-4 rounded border border-[#E7DED5]">
+                @endif
 
                 <div class="flex justify-end gap-2">
+
                     <button wire:click="closeModal"
-                        class="px-4 py-2 bg-gray-500 text-white rounded">
+                        class="px-4 py-2 bg-[#3B2F2A] text-white rounded">
                         Cancel
                     </button>
 
                     <button wire:click="saveProduct"
-                        class="px-4 py-2 bg-green-500 text-white rounded">
+                        class="px-4 py-2 bg-[#38BDF8] text-white rounded">
                         {{ $productId ? 'Update' : 'Add' }}
                     </button>
+
                 </div>
 
             </div>
+
         </div>
     @endif
 </div>
