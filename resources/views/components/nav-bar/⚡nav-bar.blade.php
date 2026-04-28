@@ -74,7 +74,7 @@ new class extends Component
                 </div>
 
             </div>
-            <div>
+            <div class="md:hidden flex">
                      <form
                     wire:submit.prevent="searchProducts"
                     class="flex flex-1 mx-6"
