@@ -24,7 +24,7 @@ new class extends Component
             document.body.style.overflow = value ? 'hidden' : 'auto'
         })
     "
-    class="relative z-50"
+    class="relative z-50 w-screen"
 >
 
     {{-- ================= NAVBAR ================= --}}

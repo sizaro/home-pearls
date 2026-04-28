@@ -26,11 +26,11 @@
         </div>
 
         {{-- MAIN CONTENT --}}
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col ">
 
             {{-- HERO --}}
             @if(!isset($hideHero) || !$hideHero)
-                <section class="w-full">
+                <section class="md:p-4 max-w-7xl mx-auto md:w-full w-screen p-4">
                     <livewire:public.hero-slider />
                 </section>
             @endif
