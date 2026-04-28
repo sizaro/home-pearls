@@ -12,7 +12,7 @@
     @livewireStyles
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden">
+<body class="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden items-center">
 
     {{-- NAVBAR --}}
     <livewire:nav-bar.nav-bar />
