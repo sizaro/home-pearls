@@ -67,18 +67,22 @@ new #[Layout('layouts.public')] class extends Component
     </div>
 
     {{-- CATEGORIES --}}
-    <div>
-        <h2 class="text-2xl font-bold text-[#5C3A21] mb-4">Categories</h2>
+<div>
+    <h2 class="text-2xl font-bold text-[#5C3A21] mb-4">
+        Categories
+    </h2>
 
-        <div class="flex flex-wrap gap-3">
-            @foreach($this->categories as $category)
-                <a href="/products?category={{ strtolower($category['name']) }}"
-                   class="px-4 py-2 bg-white border border-[#EDE6DF] rounded hover:bg-[#F5F1ED] text-[#5C3A21] transition">
-                    {{ $category['name'] }}
-                </a>
-            @endforeach
-        </div>
+    <div class="flex gap-3 overflow-x-auto whitespace-nowrap pb-2">
+
+        @foreach($this->categories as $category)
+            <a href="/products?category={{ strtolower($category['name']) }}"
+               class="inline-block px-4 py-2 bg-white border border-[#EDE6DF] rounded hover:bg-[#F5F1ED] text-[#5C3A21] transition">
+                {{ $category['name'] }}
+            </a>
+        @endforeach
+
     </div>
+</div>
 
     {{-- FEATURED PRODUCTS --}}
     <div>
