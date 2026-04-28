@@ -57,7 +57,7 @@ new #[Layout('layouts.public')] class extends Component
 ?>
 
 
-<div class="space-y-12 bg-[#F5F1ED] min-h-screen px-6 py-10">
+<div class="space-y-12 bg-[#F5F1ED] min-h-screen px-6 py-10 w-screen md:w-full">
 
     {{-- ADVERT BANNER --}}
     <div class="bg-[#D4A373]/20 border border-[#D4A373]/40 p-4 rounded text-center text-[#5C3A21]">
