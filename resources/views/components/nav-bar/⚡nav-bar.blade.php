@@ -74,6 +74,22 @@ new class extends Component
                 </div>
 
             </div>
+            <div>
+                     <form
+                    wire:submit.prevent="searchProducts"
+                    class="flex flex-1 mx-6"
+                >
+                    <input
+                        type="text"
+                        wire:model.defer="search"
+                        placeholder="Search furniture..."
+                        class="w-full px-4 py-2 rounded-l border border-[#8B5E3C]/20 bg-white text-[#8B5E3C] focus:outline-none"
+                    >
+                    <button class="bg-[#38BDF8] text-white px-5 rounded-r">
+                        🔍
+                    </button>
+                </form>
+                </div>
 
         </div>
     </nav>
