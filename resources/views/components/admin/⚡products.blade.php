@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.admin')] class extends Component
@@ -28,19 +29,12 @@ new #[Layout('layouts.admin')] class extends Component
     public $imageTimestamp = null;
 
     public function mount()
-{
-    $this->loadProducts();
+    {
+        $this->loadProducts();
 
-    $user = Auth::user();
-
-    $query = Category::orderBy('name');
-
-    if (!$user->hasRole('super admin')) {
-        $query->where('created_by', $user->id);
+        // ✅ FIX: LOAD ALL CATEGORIES (NO FILTERING)
+        $this->categories = Category::orderBy('name')->get();
     }
-
-    $this->categories = $query->get();
-}
 
     public function loadProducts()
     {
@@ -48,6 +42,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         $query = Product::with(['category', 'creator'])->latest();
 
+        // ✅ KEEP PRODUCT OWNERSHIP
         if (!$user->hasRole('super admin')) {
             $query->where('created_by', $user->id);
         }
@@ -95,16 +90,10 @@ new #[Layout('layouts.admin')] class extends Component
         $this->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'category_id' => [
-                    'required',
-                    Rule::exists('categories', 'id')->where(function ($query) {
-                        $user = Auth::user();
 
-                        if (!$user->hasRole('super admin')) {
-                            $query->where('created_by', $user->id);
-                        }
-                    }),
-                ],
+            // ✅ FIX: REMOVE created_by FILTER
+            'category_id' => 'required|exists:categories,id',
+
             'imageFile' => $this->productId
                 ? 'nullable|image|max:2048'
                 : 'required|image|max:2048',
@@ -112,9 +101,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         $user = Auth::user();
 
-        // =====================
         // UPDATE
-        // =====================
         if ($this->productId) {
 
             $product = Product::findOrFail($this->productId);
@@ -146,9 +133,7 @@ new #[Layout('layouts.admin')] class extends Component
             ]);
 
         } 
-        // =====================
         // CREATE
-        // =====================
         else {
 
             $this->authorize('create', Product::class);
@@ -176,12 +161,15 @@ new #[Layout('layouts.admin')] class extends Component
 
         $this->authorize('delete', $product);
 
+        // ✅ SAFE: ONLY DELETE PRODUCT IMAGE
         if ($product->image_url &&
             Storage::exists('private/products/' . $product->image_url)) {
             Storage::delete('private/products/' . $product->image_url);
         }
 
+        // ✅ SAFE: CATEGORY IS NOT TOUCHED
         $product->delete();
+
         $this->loadProducts();
     }
 };
