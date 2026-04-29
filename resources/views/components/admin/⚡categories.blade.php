@@ -2,7 +2,6 @@
 
 use Livewire\Component;
 use App\Models\Category;
-use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -22,29 +21,25 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function loadCategories()
     {
-        $user = Auth::user();
-
-        $query = Category::with('creator')->orderBy('id', 'desc');
-
-        if (!$user->hasRole('super admin')) {
-            $query->where('created_by', $user->id);
-        }
-
-        $this->categories = $query->get();
+        // ✅ ALL USERS SEE ALL CATEGORIES
+        $this->categories = Category::with('creator')
+            ->orderBy('id', 'desc')
+            ->get();
     }
 
     public function openModal($id = null)
     {
+        // 🔒 ONLY SUPER ADMIN
+        if (!Auth::user()->hasRole('super admin')) {
+            return;
+        }
+
         if ($id) {
             $category = Category::findOrFail($id);
-
-            $this->authorize('update', $category);
 
             $this->categoryId = $category->id;
             $this->name = $category->name;
         } else {
-            $this->authorize('create', Category::class);
-
             $this->resetFields();
         }
 
@@ -65,17 +60,18 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function saveCategory()
     {
+        // 🔒 ONLY SUPER ADMIN
+        if (!Auth::user()->hasRole('super admin')) {
+            return;
+        }
+
         $this->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        $user = Auth::user();
-
         if ($this->categoryId) {
 
             $category = Category::findOrFail($this->categoryId);
-
-            $this->authorize('update', $category);
 
             $category->update([
                 'name' => $this->name,
@@ -84,12 +80,10 @@ new #[Layout('layouts.admin')] class extends Component
 
         } else {
 
-            $this->authorize('create', Category::class);
-
             Category::create([
                 'name' => $this->name,
                 'slug' => Str::slug($this->name),
-                'created_by' => $user->id,
+                'created_by' => Auth::id(),
             ]);
         }
 
@@ -99,10 +93,12 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function deleteCategory($id)
     {
+        // 🔒 ONLY SUPER ADMIN
+        if (!Auth::user()->hasRole('super admin')) {
+            return;
+        }
+
         $category = Category::findOrFail($id);
-
-        $this->authorize('delete', $category);
-
         $category->delete();
 
         $this->loadCategories();
@@ -116,10 +112,13 @@ new #[Layout('layouts.admin')] class extends Component
         Categories
     </h1>
 
-    <button wire:click="openModal"
-        class="mb-4 px-4 py-2 bg-[#38BDF8] text-white rounded-lg hover:opacity-90 transition">
-        Add New Category
-    </button>
+    {{-- ✅ ONLY SUPER ADMIN CAN SEE ADD BUTTON --}}
+    @if(Auth::user()->hasRole('super admin'))
+        <button wire:click="openModal"
+            class="mb-4 px-4 py-2 bg-[#38BDF8] text-white rounded-lg hover:opacity-90 transition">
+            Add New Category
+        </button>
+    @endif
 
     <div class="bg-white border border-[#8B5E3C]/20 shadow rounded-xl">
 
@@ -131,7 +130,10 @@ new #[Layout('layouts.admin')] class extends Component
                 <div class="w-2/6">Created By</div>
             @endrole
 
-            <div class="w-2/6">Actions</div>
+            {{-- ✅ ONLY SUPER ADMIN SEES ACTIONS --}}
+            @if(Auth::user()->hasRole('super admin'))
+                <div class="w-2/6">Actions</div>
+            @endif
         </div>
 
         @foreach ($categories as $category)
@@ -149,23 +151,22 @@ new #[Layout('layouts.admin')] class extends Component
                     </div>
                 @endrole
 
-                <div class="w-2/6 flex gap-2">
+                {{-- ✅ ACTIONS ONLY FOR SUPER ADMIN --}}
+                @if(Auth::user()->hasRole('super admin'))
+                    <div class="w-2/6 flex gap-2">
 
-                    @can('update', $category)
                         <button wire:click="openModal({{ $category->id }})"
                             class="px-3 py-1 bg-[#38BDF8] text-white rounded hover:opacity-90">
                             Edit
                         </button>
-                    @endcan
 
-                    @can('delete', $category)
                         <button wire:click="deleteCategory({{ $category->id }})"
                             class="px-3 py-1 bg-red-500 text-white rounded hover:opacity-90">
                             Delete
                         </button>
-                    @endcan
 
-                </div>
+                    </div>
+                @endif
 
             </div>
         @endforeach
