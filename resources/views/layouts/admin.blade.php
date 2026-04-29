@@ -8,7 +8,7 @@
     @livewireStyles
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden">
 
     {{-- NAVBAR --}}
     <livewire:nav-bar.admin-nav-bar />
@@ -17,7 +17,10 @@
     <div class="flex flex-1 mt-1">
 
      {{-- RIGHT SIDEBAR --}}
-             <livewire:admin.side-bar />
+     <div class="hidden md:flex">
+        <livewire:admin.side-bar />
+     </div>
+             
         {{-- LEFT SIDE --}}
         <div class="flex-2 flex flex-col ml-4">
 
