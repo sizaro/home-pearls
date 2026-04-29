@@ -23,26 +23,37 @@ new class extends Component
     }
 
     private function initializeCart()
-    {
-        if (Auth::check()) {
-            $this->cart = Cart::firstOrCreate([
-                'user_id' => Auth::id(),
-                'status' => 'active',
-            ]);
-        } else {
-            $guestCartId = Cookie::get('guest_cart_id');
+{
+    if (Auth::check()) {
+        $this->cart = Cart::firstOrCreate([
+            'user_id' => Auth::id(),
+            'status' => 'active',
+        ]);
+        return;
+    }
 
-            if (!$guestCartId) {
-                $guestCartId = (string) Str::uuid();
-                Cookie::queue('guest_cart_id', $guestCartId, 60 * 24 * 30);
-            }
+    $guestCartId = Cookie::get('guest_cart_id');
 
-            $this->cart = Cart::firstOrCreate([
-                'guest_cart_id' => $guestCartId,
-                'status' => 'active',
-            ]);
+    if ($guestCartId) {
+        $existingCart = Cart::where('guest_cart_id', $guestCartId)->first();
+
+        // ✅ If cart exists AND is still active → reuse
+        if ($existingCart && $existingCart->status === 'active') {
+            $this->cart = $existingCart;
+            return;
         }
     }
+
+    // 🔥 Otherwise create NEW cart + NEW ID
+    $newCartId = (string) Str::uuid();
+
+    Cookie::queue('guest_cart_id', $newCartId, 60 * 24 * 30);
+
+    $this->cart = Cart::create([
+        'guest_cart_id' => $newCartId,
+        'status' => 'active',
+    ]);
+}
 
     public function add()
     {

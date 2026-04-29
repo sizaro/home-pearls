@@ -24,11 +24,11 @@ new class extends Component
             document.body.style.overflow = value ? 'hidden' : 'auto'
         })
     "
-    class="relative z-50 w-screen"
+    class="relative z-50 w-screen overflow-x-hidden"
 >
 
     {{-- ================= NAVBAR ================= --}}
-    <nav class="bg-[#F5F1ED] border-b border-[#8B5E3C]/20 relative z-50">
+    <nav class="bg-[#F5F1ED] border-b border-[#8B5E3C]/20 relative z-50 overflow-x-hidden">
         <div class="max-w-7xl mx-auto px-4">
 
             <div class="flex items-center justify-between h-16">
@@ -63,8 +63,11 @@ new class extends Component
                     </button>
                 </form>
 
+                 {{-- CART --}}
+            <livewire:common.cart-count />
+
                 {{-- LOGIN ICON --}}
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 p-2">
 
                     <a href="/login"
                        class="text-[#8B5E3C] text-2xl hover:text-[#38BDF8] transition">
