@@ -27,23 +27,29 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     public function loadData()
-    {
-        $this->categoriesCount = Category::count();
-        $this->productsCount   = Product::count();
-        $this->variantsCount   = ProductVariant::count();
+{
+    $this->categoriesCount = Category::count();
+    $this->productsCount   = Product::count();
+    $this->variantsCount   = ProductVariant::count();
 
-        $this->newOrdersCount = Order::where('status', 'pending')->count();
+    $this->newOrdersCount = Order::where('status', 'pending')->count();
 
-        $this->productsPerCategory = Category::withCount('products')
-            ->get()
-            ->pluck('products_count', 'name')
-            ->toArray();
+    $this->productsPerCategory = Category::withCount('products')
+        ->get()
+        ->pluck('products_count', 'name')
+        ->toArray();
 
-        $this->variantsPerProduct = Product::withCount('variants')
-            ->get()
-            ->pluck('variants_count', 'name')
-            ->toArray();
-    }
+    $this->variantsPerProduct = Product::withCount('variants')
+        ->get()
+        ->pluck('variants_count', 'name')
+        ->toArray();
+
+    // SEND TO JS
+   $this->dispatch('chartsUpdated', [
+    'productsPerCategory' => $this->productsPerCategory,
+    'variantsPerProduct' => $this->variantsPerProduct,
+]);
+}
 
     public function getListeners(): array
     {
@@ -123,67 +129,13 @@ new #[Layout('layouts.admin')] class extends Component
     </div>
 
     {{-- CHARTS --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
-            <h2 class="text-xl font-bold mb-4 text-[#3B2F2A]">Products per Category</h2>
-            <canvas id="productsPerCategory" class="w-full h-64"></canvas>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
-            <h2 class="text-xl font-bold mb-4 text-[#3B2F2A]">Variants per Product</h2>
-            <canvas id="variantsPerProduct" class="w-full h-64"></canvas>
-        </div>
-
-    </div>
+        <div wire:ignore class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+    <h2 class="text-xl font-bold mb-4 text-[#3B2F2A]">Products per Category</h2>
+    <canvas id="productsPerCategory"></canvas>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-let pieChart, barChart;
-
-document.addEventListener('livewire:load', function () {
-    updateCharts(@json($productsPerCategory), @json($variantsPerProduct));
-
-    Livewire.hook('message.processed', () => {
-        updateCharts(@this.productsPerCategory, @this.variantsPerProduct);
-    });
-});
-
-function updateCharts(productsPerCategory, variantsPerProduct) {
-
-    const pieCtx = document.getElementById('productsPerCategory').getContext('2d');
-    if (pieChart) pieChart.destroy();
-
-    pieChart = new Chart(pieCtx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(productsPerCategory),
-            datasets: [{
-                data: Object.values(productsPerCategory),
-                backgroundColor: ['#38BDF8', '#8B5E3C', '#3B2F2A', '#E7DED5'],
-            }]
-        }
-    });
-
-    const barCtx = document.getElementById('variantsPerProduct').getContext('2d');
-    if (barChart) barChart.destroy();
-
-    barChart = new Chart(barCtx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(variantsPerProduct),
-            datasets: [{
-                label: 'Number of Variants',
-                data: Object.values(variantsPerProduct),
-                backgroundColor: '#38BDF8'
-            }]
-        },
-        options: {
-            scales: {
-                y: { beginAtZero: true }
-            }
-        }
-    });
-}
-</script>
+<div wire:ignore class="bg-white p-6 rounded-xl shadow border border-[#3B2F2A]/10">
+    <h2 class="text-xl font-bold mb-4 text-[#3B2F2A]">Variants per Product</h2>
+    <canvas id="variantsPerProduct"></canvas>
+</div>
+</div>

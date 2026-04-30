@@ -69,12 +69,33 @@ new class extends Component
                 {{-- LOGIN ICON --}}
                 <div class="flex items-center gap-4 p-2">
 
-                    <a href="/login"
-                       class="text-[#8B5E3C] text-2xl hover:text-[#38BDF8] transition">
-                        👤
-                    </a>
+    @auth
 
-                </div>
+        @php
+            $user = Auth::user();
+
+            $dashboard = match(true) {
+                $user->hasRole('super admin') => route('admin.dashboard'),
+                $user->hasRole('admin') => route('admin.dashboard'),
+                default => route('dashboard'),
+            };
+        @endphp
+
+        <a href="{{ $dashboard }}"
+           class="text-[#8B5E3C] text-2xl hover:text-[#38BDF8] transition">
+            👤
+        </a>
+
+    @else
+
+        <a href="{{ route('login') }}"
+           class="text-[#8B5E3C] text-2xl hover:text-[#38BDF8] transition">
+            👤
+        </a>
+
+    @endauth
+
+</div>
 
             </div>
             <div class="md:hidden flex">
