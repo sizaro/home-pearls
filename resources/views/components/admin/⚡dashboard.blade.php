@@ -56,7 +56,7 @@ new #[Layout('layouts.admin')] class extends Component
 };
 ?>
 
-<div class="space-y-8 p-6 bg-[#F6F1EB] min-h-screen text-[#3B2F2A]">
+<div class="md:space-y-8 p-6 bg-[#F6F1EB] min-h-screen text-[#3B2F2A] space-y-8">
 
     {{-- TITLE --}}
     <div>
