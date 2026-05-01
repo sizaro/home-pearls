@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Home Pearls' }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -22,9 +23,9 @@
         </aside>
 
         {{-- MAIN CONTENT --}}
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col overflow-x-hidden items-center">
 
-            <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+            <main class="flex-1 p-6 max-w-7xl mx-auto w-full overflow-y-auto overflow-x-hidden items-center">
                 {{ $slot }}
             </main>
 

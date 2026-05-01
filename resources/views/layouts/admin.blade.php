@@ -23,10 +23,10 @@
      </div>
              
         {{-- LEFT SIDE --}}
-        <div class="flex-2 flex flex-col ml-1 md:ml-4">
+        <div class="flex-2 flex flex-col ml-1 md:ml-4 overflow-x-hidden items-center">
 
             {{-- MAIN --}}
-            <main class="flex-1 p-6 max-w-7xl mx-auto w-full overflow-y-auto">
+            <main class="flex-1 p-6 max-w-7xl mx-auto w-full overflow-y-auto overflow-x-hidden items-center">
                 {{ $slot }}
             </main>
 
