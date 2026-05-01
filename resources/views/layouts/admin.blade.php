@@ -44,69 +44,106 @@
 {{-- ✅ CHART SCRIPT --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 let pieChart = null;
 let barChart = null;
 
-document.addEventListener('livewire:init', () => {
+function renderCharts(products = {}, variants = {}) {
 
-    function renderCharts(products = {}, variants = {}) {
+    const pieCanvas = document.getElementById('productsPerCategory');
+    const barCanvas = document.getElementById('variantsPerProduct');
 
-        const pieCanvas = document.getElementById('productsPerCategory');
-        const barCanvas = document.getElementById('variantsPerProduct');
+    if (!pieCanvas || !barCanvas) {
+        console.warn("Canvas not ready");
+        return;
+    }
 
-        if (!pieCanvas || !barCanvas) return;
+    // ===== PIE CHART =====
+    const pieLabels = Object.keys(products);
+    const pieValues = Object.values(products);
 
-        // COLORS
-        const colors = [
-            '#38BDF8', '#8B5E3C', '#3B2F2A', '#E7DED5',
-            '#A78BFA', '#34D399', '#F87171', '#FBBF24'
-        ];
+    if (pieLabels.length > 0) {
 
-        // PIE
         if (pieChart) pieChart.destroy();
 
         pieChart = new Chart(pieCanvas, {
             type: 'pie',
             data: {
-                labels: Object.keys(products),
+                labels: pieLabels,
                 datasets: [{
-                    data: Object.values(products),
-                    backgroundColor: colors
+                    data: pieValues,
+                    backgroundColor: [
+                        '#38BDF8', '#8B5E3C', '#3B2F2A',
+                        '#E7DED5', '#A78BFA', '#34D399'
+                    ]
                 }]
             }
         });
 
-        // BAR
-        if (barChart) barChart.destroy();
-
-        barChart = new Chart(barCanvas, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(variants),
-                datasets: [{
-                    label: 'Variants',
-                    data: Object.values(variants),
-                    backgroundColor: colors.slice(0, Object.keys(variants).length)
-                }]
-            },
-            options: {
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
+    } else {
+        console.warn("Pie chart has no data");
     }
 
-    // LISTEN FROM LIVEWIRE
-    Livewire.on('chartsUpdated', (data) => {
-        console.log("Chart data:", data); // 👈 DEBUG IN CONSOLE
-        renderCharts(
-            data.productsPerCategory || {},
-            data.variantsPerProduct || {}
-        );
+    // ===== BAR CHART (WITH REAL COLORS) =====
+    const barLabels = Object.keys(variants);
+    const barValues = Object.values(variants);
+
+    const palette = [
+        '#38BDF8', '#8B5E3C', '#3B2F2A',
+        '#E7DED5', '#A78BFA', '#34D399',
+        '#F87171', '#FBBF24'
+    ];
+
+    const barColors = barLabels.map((_, i) => palette[i % palette.length]);
+
+    if (barChart) barChart.destroy();
+
+    barChart = new Chart(barCanvas, {
+        type: 'bar',
+        data: {
+            labels: barLabels,
+            datasets: [{
+                label: 'Variants',
+                data: barValues,
+                backgroundColor: barColors
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
     });
+}
+
+
+// ✅ VERY IMPORTANT — wait for Livewire + DOM
+document.addEventListener('livewire:initialized', () => {
+
+  Livewire.on('chartsUpdated', (data) => {
+
+    console.log("Raw:", data);
+
+    // FIX: extract real data from array
+    const payload = Array.isArray(data) ? data[0] : data;
+
+    console.log("Fixed:", payload);
+
+    setTimeout(() => {
+        renderCharts(
+            payload.productsPerCategory || {},
+            payload.variantsPerProduct || {}
+        );
+    }, 100);
+});
 
 });
 </script>
+
 </body>
 </html>

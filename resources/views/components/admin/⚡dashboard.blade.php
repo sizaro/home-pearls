@@ -40,14 +40,15 @@ new #[Layout('layouts.admin')] class extends Component
             })
             ->toArray();
 
-        $this->variantsPerProduct = Product::withCount('variants')
-            ->get()
-            ->mapWithKeys(function ($prod) {
-                return [$prod->name ?? 'Unknown' => $prod->variants_count];
-            })
-            ->toArray();
+       $this->variantsPerProduct = Product::with('variants')
+    ->get()
+    ->mapWithKeys(function ($product) {
+        return [
+            $product->name => $product->variants->sum('stock')
+        ];
+    })
+    ->toArray();
 
-        // ✅ SEND TO JS
         $this->dispatch('chartsUpdated', [
             'productsPerCategory' => $this->productsPerCategory,
             'variantsPerProduct' => $this->variantsPerProduct,
