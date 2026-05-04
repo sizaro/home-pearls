@@ -159,7 +159,7 @@ $this->visitsMonthly = Visit::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month
         <div class="grid md:grid-cols-3 gap-6">
 </div>
     </div>
-<div class="flex flex-col md:flex-row w-full">
+<div class="flex flex-col md:flex-wrap w-full h-30 p-6 gap-5">
     <div wire:ignore class="bg-white p-6 rounded shadow">
         <h2 class="mb-4 font-bold">Daily Visitors</h2>
         <canvas id="visitsDailyChart"></canvas>
