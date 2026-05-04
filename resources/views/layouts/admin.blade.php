@@ -42,105 +42,99 @@
     @livewireScripts
 
 {{-- ✅ CHART SCRIPT --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-let pieChart = null;
-let barChart = null;
+let pieChart, barChart, visitsChart;
 
-function renderCharts(products = {}, variants = {}) {
+function renderCharts(payload) {
 
+    const products = payload.productsPerCategory || {};
+    const variants = payload.variantsPerProduct || {};
+    const visits = payload.visitsDaily || {};
+
+    // ================= PIE =================
     const pieCanvas = document.getElementById('productsPerCategory');
-    const barCanvas = document.getElementById('variantsPerProduct');
-
-    if (!pieCanvas || !barCanvas) {
-        console.warn("Canvas not ready");
-        return;
-    }
-
-    // ===== PIE CHART =====
-    const pieLabels = Object.keys(products);
-    const pieValues = Object.values(products);
-
-    if (pieLabels.length > 0) {
+    if (pieCanvas) {
 
         if (pieChart) pieChart.destroy();
 
         pieChart = new Chart(pieCanvas, {
             type: 'pie',
             data: {
-                labels: pieLabels,
+                labels: Object.keys(products),
                 datasets: [{
-                    data: pieValues,
-                    backgroundColor: [
-                        '#38BDF8', '#8B5E3C', '#3B2F2A',
-                        '#E7DED5', '#A78BFA', '#34D399'
-                    ]
+                    data: Object.values(products),
+                    backgroundColor: ['#38BDF8','#8B5E3C','#3B2F2A','#E7DED5','#34D399']
                 }]
             }
         });
-
-    } else {
-        console.warn("Pie chart has no data");
     }
 
-    // ===== BAR CHART (WITH REAL COLORS) =====
-    const barLabels = Object.keys(variants);
-    const barValues = Object.values(variants);
+    // ================= BAR =================
+    const barCanvas = document.getElementById('variantsPerProduct');
+    if (barCanvas) {
 
-    const palette = [
-        '#38BDF8', '#8B5E3C', '#3B2F2A',
-        '#E7DED5', '#A78BFA', '#34D399',
-        '#F87171', '#FBBF24'
-    ];
+        if (barChart) barChart.destroy();
 
-    const barColors = barLabels.map((_, i) => palette[i % palette.length]);
-
-    if (barChart) barChart.destroy();
-
-    barChart = new Chart(barCanvas, {
-        type: 'bar',
-        data: {
-            labels: barLabels,
-            datasets: [{
-                label: 'Variants',
-                data: barValues,
-                backgroundColor: barColors
-            }]
-        },
-        options: {
-            plugins: {
-                legend: { display: false }
+        barChart = new Chart(barCanvas, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(variants),
+                datasets: [{
+                    label: 'Variants',
+                    data: Object.values(variants),
+                    backgroundColor: '#38BDF8'
+                }]
             },
-            scales: {
-                y: { beginAtZero: true }
+            options: {
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
             }
-        }
-    });
+        });
+    }
+
+    // ================= VISITS LINE =================
+    const visitCanvas = document.getElementById('visitsDailyChart');
+    if (visitCanvas) {
+
+        if (visitsChart) visitsChart.destroy();
+
+        visitsChart = new Chart(visitCanvas, {
+            type: 'line',
+            data: {
+                labels: Object.keys(visits),
+                datasets: [{
+                    label: 'Daily Visits',
+                    data: Object.values(visits),
+                    borderWidth: 3,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+    }
 }
 
 
-// ✅ VERY IMPORTANT — wait for Livewire + DOM
+// ================= LIVEWIRE HOOK =================
 document.addEventListener('livewire:initialized', () => {
 
-  Livewire.on('chartsUpdated', (data) => {
+    Livewire.on('chartsUpdated', (data) => {
 
-    console.log("Raw:", data);
+        const payload = Array.isArray(data) ? data[0] : data;
 
-    // FIX: extract real data from array
-    const payload = Array.isArray(data) ? data[0] : data;
+        setTimeout(() => {
+            renderCharts(payload);
+        }, 200);
 
-    console.log("Fixed:", payload);
-
-    setTimeout(() => {
-        renderCharts(
-            payload.productsPerCategory || {},
-            payload.variantsPerProduct || {}
-        );
-    }, 100);
-});
+    });
 
 });
 </script>

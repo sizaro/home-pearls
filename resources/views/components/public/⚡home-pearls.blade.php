@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Visit;
 
 new #[Layout('layouts.public')] class extends Component
 {
@@ -18,6 +19,22 @@ new #[Layout('layouts.public')] class extends Component
 
     public function mount()
     {
+
+        $ip = request()->ip();
+$url = request()->fullUrl();
+$today = now()->toDateString();
+
+// Check using created_at instead of visit_date
+$alreadyVisitedToday = Visit::where('ip', $ip)
+    ->whereDate('created_at', $today)
+    ->exists();
+
+if (!$alreadyVisitedToday) {
+    Visit::create([
+        'ip' => $ip,
+        'url' => $url,
+    ]);
+}
         // Fetch categories
         $this->categories = Category::orderBy('name')
                                     ->get(['name'])

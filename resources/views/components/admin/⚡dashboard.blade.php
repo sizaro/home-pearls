@@ -8,9 +8,14 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Order;
+use App\Models\Visit;
 
 new #[Layout('layouts.admin')] class extends Component
 {
+
+    public array $visitsDaily = [];
+public array $visitsWeekly = [];
+public array $visitsMonthly = [];
     public int $categoriesCount = 0;
     public int $productsCount = 0;
     public int $variantsCount = 0;
@@ -49,10 +54,31 @@ new #[Layout('layouts.admin')] class extends Component
     })
     ->toArray();
 
-        $this->dispatch('chartsUpdated', [
-            'productsPerCategory' => $this->productsPerCategory,
-            'variantsPerProduct' => $this->variantsPerProduct,
-        ]);
+        // ✅ VISITS (NOW CORRECT)
+   $this->visitsDaily = Visit::selectRaw('DATE(created_at) as date, COUNT(*) as total')
+    ->groupBy('date')
+    ->pluck('total', 'date')
+    ->toArray();
+
+$this->visitsWeekly = Visit::selectRaw("TO_CHAR(created_at, 'IYYY-IW') as week, COUNT(*) as total")
+    ->groupBy('week')
+    ->pluck('total', 'week')
+    ->toArray();
+
+$this->visitsMonthly = Visit::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as total")
+    ->groupBy('month')
+    ->pluck('total', 'month')
+    ->toArray();
+
+    $this->dispatch('chartsUpdated', [
+        'productsPerCategory' => $this->productsPerCategory,
+        'variantsPerProduct' => $this->variantsPerProduct,
+
+        // send visits too
+        'visitsDaily' => $this->visitsDaily,
+        'visitsWeekly' => $this->visitsWeekly,
+        'visitsMonthly' => $this->visitsMonthly,
+    ]);
     }
 };
 ?>
@@ -118,26 +144,36 @@ new #[Layout('layouts.admin')] class extends Component
     </div>
 </div>
 
-    {{-- DEBUG (VERY IMPORTANT) --}}
-    <div class="bg-yellow-100 p-4 rounded text-sm">
-        <strong>DEBUG:</strong><br>
-        Products per Category: {{ json_encode($productsPerCategory) }} <br>
-        Variants per Product: {{ json_encode($variantsPerProduct) }}
-    </div>
-
     {{-- CHARTS --}}
     <div class="grid md:grid-cols-2 gap-6">
 
-        <div wire:ignore class="bg-white p-6 rounded shadow">
+        <div wire:ignore class="bg-white p-6 rounded shadow w-55 h-65">
             <h2 class="mb-4 font-bold">Products per Category</h2>
             <canvas id="productsPerCategory"></canvas>
         </div>
 
-        <div wire:ignore class="bg-white p-6 rounded shadow">
+        <div wire:ignore class="bg-white p-6 rounded shadow h-65">
             <h2 class="mb-4 font-bold">Variants per Product</h2>
             <canvas id="variantsPerProduct"></canvas>
         </div>
-
+        <div class="grid md:grid-cols-3 gap-6">
+</div>
+    </div>
+<div class="flex flex-col md:flex-row w-full">
+    <div wire:ignore class="bg-white p-6 rounded shadow">
+        <h2 class="mb-4 font-bold">Daily Visitors</h2>
+        <canvas id="visitsDailyChart"></canvas>
     </div>
 
+    <div wire:ignore class="bg-white p-6 rounded shadow">
+        <h2 class="mb-4 font-bold">Weekly Visitors</h2>
+        <canvas id="visitsWeeklyChart"></canvas>
+    </div>
+
+    <div wire:ignore class="bg-white p-6 rounded shadow">
+        <h2 class="mb-4 font-bold">Monthly Visitors</h2>
+        <canvas id="visitsMonthlyChart"></canvas>
+    </div>
+
+</div>
 </div>
