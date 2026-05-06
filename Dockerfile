@@ -61,4 +61,4 @@ RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf
 
 EXPOSE 10000
 
-CMD ["apache2-foreground"]
+CMD php artisan migrate --force || true && apache2-foreground
