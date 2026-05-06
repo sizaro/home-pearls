@@ -45,7 +45,7 @@ new class extends Component
     @endphp
 
     @if($product)
-        <div class="relative h-[50vh] md:h-[60vh]">
+        <div class="relative h-[50vh] md:h-[60vh] w-full">
 
             {{-- IMAGE --}}
             <img
