@@ -113,7 +113,7 @@ if (!$alreadyVisitedToday) {
                         src="{{ $product['image_url'] 
                             ? route('products.image', ['id' => $product['id']]) 
                             : 'https://via.placeholder.com/1200x500' }}"
-                        class="w-full h-40 object-cover rounded"
+                        class="w-full h-[70%] object-contain rounded"
                     >
 
                     <h3 class="mt-3 font-semibold text-[#5C3A21]">
@@ -142,13 +142,13 @@ if (!$alreadyVisitedToday) {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($this->top as $product)
-                <div class="bg-white rounded-xl shadow p-4 hover:shadow-lg transition">
+                <div class="bg-white rounded-xl shadow p-4 hover:shadow-lg transition w-full">
 
                     <img
                         src="{{ $product['image_url'] 
                             ? route('products.image', ['id' => $product['id']]) 
                             : 'https://via.placeholder.com/1200x500' }}"
-                        class="w-full h-40 object-cover rounded"
+                        class="w-full h-[70%] object-contain rounded"
                     >
 
                     <h3 class="mt-3 font-semibold text-[#5C3A21]">

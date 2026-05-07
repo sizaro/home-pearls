@@ -11,90 +11,136 @@ new class extends Component
     public function mount()
     {
         $this->products = Product::orderBy('id', 'desc')
-            ->take(4)
+            ->take(6)
+            ->with('variants')
             ->get()
             ->map(function ($product) {
+                $variant = $product->variants->first();
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'short_description' => $product->short_description,
+                    'description' => $product->short_description,
+                    'price' => $variant?->price,
+                    'stock' => $product->stock ?? 0,
                     'image_url' => $product->image_url,
                 ];
             })
             ->toArray();
-
-        // Safety check
-        if (count($this->products) === 0) {
-            $this->index = 0;
-        }
     }
 
-    public function nextSlide()
+    public function next()
     {
-        if (count($this->products) === 0) return;
-
         $this->index = ($this->index + 1) % count($this->products);
     }
-};
-?>
 
-<div class="relative w-full overflow-hidden bg-[#F6F1EB]" wire:poll.5000ms="nextSlide">
+    public function prev()
+    {
+        $this->index = ($this->index - 1 + count($this->products)) % count($this->products);
+    }
+
+    public function autoSlide()
+    {
+        $this->next();
+    }
+};
+
+?>
+<div
+    class="relative w-full overflow-hidden bg-[#F6F1EB]"
+    wire:poll.6000ms="autoSlide"
+>
 
     @php
         $product = $this->products[$this->index] ?? null;
     @endphp
 
     @if($product)
-        <div class="relative h-[50vh] md:h-[60vh] w-full">
 
-            {{-- IMAGE --}}
+    {{-- DESKTOP + TABLET --}}
+    <div class="hidden md:grid grid-cols-2 h-[70vh]">
+
+        {{-- LEFT SIDE (TEXT) --}}
+        <div class="flex flex-col justify-center p-10 space-y-4">
+
+            <h1 class="text-4xl font-bold text-[#3B2F2A]">
+                {{ $product['name'] }}
+            </h1>
+
+            <p class="text-[#3B2F2A]/70">
+                {{ $product['description'] }}
+            </p>
+
+            <p class="text-xl font-bold text-[#8B5E3C]">
+                ${{ number_format($product['price'] ?? 0, 2) }}
+            </p>
+
+            <p class="text-sm text-gray-600">
+                Stock: {{ $product['stock'] }}
+            </p>
+
+            <a href="{{ route('products.show', $product['id']) }}"
+               class="w-fit bg-[#38BDF8] text-white px-6 py-3 rounded-lg hover:opacity-90 transition">
+                Shop Now
+            </a>
+
+        </div>
+
+        {{-- RIGHT SIDE (IMAGE FIXED) --}}
+        <div class="w-full h-full flex items-center justify-center bg-white overflow-hidden">
+
             <img
-                src="{{ $product['image_url'] 
-                    ? route('products.image', ['id' => $product['id']]) 
-                    : 'https://via.placeholder.com/1200x500' }}"
-                class="w-full h-full object-cover bg-gray-200 p-2"
+                src="{{ $product['image_url'] ? route('products.image', $product['id']) : 'https://via.placeholder.com/800' }}"
+                class="w-full h-full object-contain"
             >
 
-            {{-- OVERLAY --}}
-            <div class="absolute inset-0 bg-black/30"></div>
+        </div>
 
-            {{-- TEXT --}}
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
+    </div>
 
-                <h1 class="text-3xl md:text-5xl font-bold">
-                    {{ $product['name'] }}
-                </h1>
+    {{-- MOBILE --}}
+    <div class="md:hidden relative h-[60vh] flex flex-col items-center p-4">
 
-                <p class="mt-3 text-lg md:text-xl text-white/80 max-w-2xl">
-                    {{ $product['short_description'] ?? '' }}
-                </p>
+        <img
+            src="{{ $product['image_url'] ? route('products.image', $product['id']) : 'https://via.placeholder.com/800' }}"
+            class="w-full h-full object-contain"
+        >
 
-                <a href="{{ route('products.show', $product['id']) }}"
-                   class="mt-6 bg-[#38BDF8] text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
-                    Shop Now
-                </a>
+        {{-- OVERLAY --}}
+        <div class="absolute bottom-0 w-full bg-black/10 text-white p-4 flex flex-col items-center">
 
-            </div>
+            <h2 class="text-lg font-bold">
+                {{ $product['name'] }}
+            </h2>
+
+            <p class="text-sm">
+                ${{ number_format($product['price'] ?? 0, 2) }}
+                • Stock: {{ $product['stock'] }}
+            </p>
+
+            <a href="{{ route('products.show', $product['id']) }}"
+               class="inline-block mt-2 bg-[#38BDF8] px-4 py-2 rounded">
+                Shop Now
+            </a>
 
         </div>
+
+    </div>
+
+    {{-- CONTROLS --}}
+    <button wire:click="prev"
+        class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/70 px-3 py-2 rounded-full">
+        ‹
+    </button>
+
+    <button wire:click="next"
+        class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/70 px-3 py-2 rounded-full">
+        ›
+    </button>
+
     @else
-        <div class="h-[50vh] flex items-center justify-center text-[#3B2F2A]/60">
+        <div class="h-[60vh] flex items-center justify-center text-gray-500">
             No products available
-        </div>
-    @endif
-
-    {{-- INDICATORS --}}
-    @if(count($this->products) > 0)
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-
-            @foreach($this->products as $i => $p)
-                <span
-                    wire:click="$set('index', {{ $i }})"
-                    class="w-3 h-3 rounded-full cursor-pointer transition
-                    {{ $i === $this->index ? 'bg-[#38BDF8]' : 'bg-white/50' }}"
-                ></span>
-            @endforeach
-
         </div>
     @endif
 
