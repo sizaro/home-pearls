@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 use App\Models\Cart;
 
-new #[Layout('layouts.products')] class extends Component
+new #[Layout('layouts.products', title:'Cart')] class extends Component
 {
     public ?Cart $cart = null;
 
