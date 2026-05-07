@@ -109,14 +109,17 @@ if (!$alreadyVisitedToday) {
             @foreach($this->featured as $product)
                 <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-4">
 
-                    <img
+                    <div>
+                        <img
                         src="{{ $product['image_url'] 
                             ? route('products.image', ['id' => $product['id']]) 
                             : 'https://via.placeholder.com/1200x500' }}"
                         class="w-full h-[70%] object-contain rounded"
                     >
+                    </div>
 
-                    <h3 class="mt-3 font-semibold text-[#5C3A21]">
+                    <div>
+                        <h3 class="mt-3 font-semibold text-[#5C3A21]">
                         {{ $product['name'] }}
                     </h3>
 
@@ -130,6 +133,7 @@ if (!$alreadyVisitedToday) {
                        class="mt-3 w-full inline-block bg-[#8B5E3C] hover:bg-[#5C3A21] text-white py-2 rounded text-center transition">
                         View
                     </a>
+                    </div>
 
                 </div>
             @endforeach
@@ -144,14 +148,17 @@ if (!$alreadyVisitedToday) {
             @foreach($this->top as $product)
                 <div class="bg-white rounded-xl shadow p-4 hover:shadow-lg transition w-full">
 
-                    <img
+                    <div>
+                        <img
                         src="{{ $product['image_url'] 
                             ? route('products.image', ['id' => $product['id']]) 
                             : 'https://via.placeholder.com/1200x500' }}"
-                        class="w-full h-[70%] object-contain rounded"
+                        class="w-full h-[70%] md:h-full object-contain rounded"
                     >
+                    </div>
 
-                    <h3 class="mt-3 font-semibold text-[#5C3A21]">
+                    <div>
+                        <h3 class="mt-3 font-semibold text-[#5C3A21]">
                         {{ $product['name'] }}
                     </h3>
 
@@ -166,6 +173,7 @@ if (!$alreadyVisitedToday) {
                         View
                     </a>
 
+                    </div>
                 </div>
             @endforeach
         </div>
