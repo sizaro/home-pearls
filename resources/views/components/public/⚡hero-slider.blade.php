@@ -38,7 +38,7 @@ new class extends Component
 };
 ?>
 
-<div class="relative w-full overflow-hidden bg-[#F6F1EB]">
+<div class="relative w-full overflow-hidden bg-[#F6F1EB]" wire:poll.5000ms="nextSlide">
 
     @php
         $product = $this->products[$this->index] ?? null;
@@ -52,7 +52,7 @@ new class extends Component
                 src="{{ $product['image_url'] 
                     ? route('products.image', ['id' => $product['id']]) 
                     : 'https://via.placeholder.com/1200x500' }}"
-                class="w-full h-full object-cover"
+                class="w-full h-full object-cover bg-gray-200 p-2"
             >
 
             {{-- OVERLAY --}}

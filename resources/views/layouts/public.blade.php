@@ -30,7 +30,7 @@
 
             {{-- HERO --}}
             @if(!isset($hideHero) || !$hideHero)
-                <section class="md:p-4 max-w-7xl mx-auto md:w-full w-screen p-4">
+                <section class="p-4 max-w-7xl mx-auto w-full">
                     <livewire:public.hero-slider />
                 </section>
             @endif
