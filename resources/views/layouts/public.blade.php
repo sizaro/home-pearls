@@ -26,7 +26,7 @@
         </div>
 
         {{-- MAIN CONTENT --}}
-        <div class="flex-1 flex flex-col ">
+        <div class="flex-1 flex flex-col w-full ">
 
             {{-- HERO --}}
             @if(!isset($hideHero) || !$hideHero)
