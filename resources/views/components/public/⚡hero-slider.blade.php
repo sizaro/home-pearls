@@ -47,7 +47,7 @@ new class extends Component
 
 ?>
 <div
-    class="relative w-full overflow-hidden bg-[#F6F1EB]"
+    class="relative max-w-6xl overflow-hidden bg-[#F6F1EB]"
     wire:poll.6000ms="autoSlide"
 >
 
