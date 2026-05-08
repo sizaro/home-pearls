@@ -53,7 +53,7 @@
     {{-- FLOATING WHATSAPP BUTTON --}}
 <a href="https://wa.me/256701234567"
    target="_blank"
-   class="fixed bottom-5 right-5 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg z-50 transition transform hover:scale-110 flex items-center justify-center">
+   class="fixed bottom-8 right-5 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg z-50 transition transform hover:scale-110 flex items-center justify-center">
 
     <img src="{{ asset('images/whatsapp_icon.png') }}"
          alt="WhatsApp"

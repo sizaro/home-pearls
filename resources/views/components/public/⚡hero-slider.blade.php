@@ -87,7 +87,7 @@ new class extends Component
         </div>
 
         {{-- RIGHT SIDE (IMAGE FIXED) --}}
-        <div class="w-full h-full flex items-center justify-center bg-white overflow-hidden">
+        <div class="w-full h-full flex items-center justify-center bg-[#F6F1EB] overflow-hidden">
 
             <img
                 src="{{ $product['image_url'] ? route('products.image', $product['id']) : 'https://via.placeholder.com/800' }}"

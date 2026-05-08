@@ -38,15 +38,15 @@
             </footer>
 
              {{-- FLOATING WHATSAPP BUTTON --}}
-    <a href="https://wa.me/256701234567"
-       target="_blank"
-       class="fixed bottom-5 right-5 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg z-50 transition transform hover:scale-110">
+       {{-- FLOATING WHATSAPP BUTTON --}}
+<a href="https://wa.me/256701234567"
+   target="_blank"
+   class="fixed bottom-8 right-5 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg z-50 transition transform hover:scale-110 flex items-center justify-center">
 
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-white" viewBox="0 0 24 24">
-            <path d="M20 3.5A11.5 11.5 0 0 0 2.6 18.7L2 22l3.4-.9A11.5 11.5 0 1 0 20 3.5zm-8.5 17a9 9 0 0 1-4.6-1.3l-.3-.2-2.1.6.6-2-.2-.3A9 9 0 1 1 11.5 20.5z"/>
-        </svg>
-
-    </a>
+    <img src="{{ asset('images/whatsapp_icon.png') }}"
+         alt="WhatsApp"
+         class="w-10 h-10 rounded-full">
+</a>
     @livewireScripts
 </body>
 </html>
