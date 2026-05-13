@@ -11,6 +11,10 @@ new class extends Component
 
     public string $adminMessage = '';
 
+    public string $selectedStatus = '';
+
+    public string $successMessage = '';
+
     public array $statuses = [
         'pending',
         'processing',
@@ -33,13 +37,24 @@ new class extends Component
     {
         if (!$id) return;
 
-        $this->order = Order::with('items.variant')->find($id);
+        $this->order = Order::with('items.variant.product')->find($id);
+
+        if ($this->order) {
+            $this->selectedStatus = $this->order->status;
+        }
+
         $this->orderId = $id;
     }
 
     public function close()
     {
-        $this->reset(['order', 'orderId', 'adminMessage']);
+        $this->reset([
+            'order',
+            'orderId',
+            'adminMessage',
+            'selectedStatus',
+            'successMessage'
+        ]);
     }
 
     public function markReady($itemId)
@@ -48,7 +63,14 @@ new class extends Component
 
         if (!$item) return;
 
-        if ($item->variant->created_by !== auth()->id()) return;
+        $isOwner = $item->variant->product->created_by === auth()->id();
+
+        if (
+            !auth()->user()->hasRole('super admin')
+            && !$isOwner
+        ) {
+            return;
+        }
 
         $item->ready = true;
         $item->save();
@@ -56,38 +78,62 @@ new class extends Component
         $this->loadOrder($this->orderId);
     }
 
-    public function updateStatus($status)
+    public function updateStatus()
     {
         if (!$this->order) return;
-        if ($this->order->status === $status) return;
 
-        $allReady = $this->order->items->every(fn($i) => $i->ready);
+        if (!auth()->user()->hasRole('super admin')) {
+            return;
+        }
+
+        if (!$this->selectedStatus) {
+            session()->flash('error', 'Please select a status first.');
+            return;
+        }
+
+        if ($this->order->status === $this->selectedStatus) {
+            session()->flash('error', 'Order is already in this status.');
+            return;
+        }
+
+        $allReady = $this->order->items->every(fn ($i) => $i->ready);
 
         if (!$allReady) {
-            session()->flash('error', 'All items must be READY first');
+            session()->flash('error', 'All items must be marked READY first.');
             return;
         }
 
         $old = $this->order->status;
 
-        $this->order->status = $status;
+        $this->order->status = $this->selectedStatus;
         $this->order->save();
 
-        $this->sendEmail($old, $status);
+        $this->sendEmail($old, $this->selectedStatus);
 
-        $this->close();
-        $this->dispatch('resetOrderView');
+        // refresh UI
+        $this->loadOrder($this->orderId);
+
+        // SUCCESS MESSAGE
+        $this->successMessage = "Order status updated to " . ucfirst($this->selectedStatus);
+
+        // AUTO CLEAR AFTER 4 SECONDS (Livewire-safe)
+        $this->dispatch('clearSuccessMessage');
+    }
+
+    public function clearSuccessMessage()
+    {
+        $this->successMessage = '';
     }
 
     private function sendEmail($old, $new)
     {
         if (!$this->order?->email) return;
 
-        $itemsText = $this->order->items->map(function ($i) {
-            return $i->variant->name . " (x{$i->quantity})";
-        })->implode(", ");
+        $itemsText = $this->order->items
+            ->map(fn ($i) => $i->variant->name . " (x{$i->quantity})")
+            ->implode(", ");
 
-        $message = $this->adminMessage ?: "Your order is being processed.";
+        $message = $this->adminMessage ?: "Your order has been updated.";
 
         $body = "
 Hello,
@@ -97,9 +143,11 @@ Your order #{$this->order->id} has been updated.
 Items:
 {$itemsText}
 
-Total: {$this->order->total_amount}
+Total:
+{$this->order->total_amount}
 
-New Status: {$new}
+Status:
+{$new}
 
 Message:
 {$message}
@@ -116,132 +164,184 @@ Thank you.
 ?>
 
 <div>
+
 @if($order)
+
+@php
+    $visibleItems = auth()->user()->hasRole('super admin')
+        ? $order->items
+        : $order->items->filter(function ($item) {
+            return $item->variant->product->created_by === auth()->id();
+        });
+
+    $readyCount = $order->items->where('ready', true)->count();
+    $totalCount = $order->items->count();
+    $allReady = $readyCount === $totalCount;
+@endphp
 
 <div class="fixed inset-0 z-50 flex items-end md:items-center justify-center">
 
-    {{-- overlay --}}
-    <div class="absolute inset-0 bg-[#3B2F2A]/70" wire:click="close"></div>
+    <div class="absolute inset-0 bg-black/50" wire:click="close"></div>
 
-    {{-- modal --}}
-    <div class="relative bg-[#F6F1EB] text-[#3B2F2A] w-full md:max-w-4xl 
-                rounded-t-2xl md:rounded-xl 
-                p-4 max-h-[90vh] overflow-y-auto border border-[#3B2F2A]/10">
+    <div class="relative bg-[#F6F1EB] w-full md:max-w-4xl rounded-t-2xl md:rounded-xl p-5 max-h-[90vh] overflow-y-auto">
 
-        {{-- mobile handle --}}
-        <div class="w-12 h-1 bg-[#3B2F2A]/30 rounded mx-auto mb-3 md:hidden"></div>
+        <div class="flex justify-between items-center mb-5">
+            <div>
+                <h2 class="font-bold text-xl">
+                    Order #{{ $order->id }}
+                </h2>
+                <p class="text-sm text-[#3B2F2A]/60">
+                    {{ ucfirst($order->status) }}
+                </p>
+            </div>
 
-        {{-- header --}}
-        <div class="flex justify-between items-center mb-3">
-            <h2 class="font-bold text-lg">Order #{{ $order->id }}</h2>
-            <button wire:click="close" class="text-[#38BDF8] text-xl">✕</button>
+            <button wire:click="close" class="text-xl">✕</button>
         </div>
 
-        {{-- summary --}}
-        <div class="text-sm border-b border-[#3B2F2A]/10 pb-3 mb-3 space-y-1">
+        <div class="bg-white rounded-xl p-4 mb-5 space-y-2">
             <div><strong>Email:</strong> {{ $order->email }}</div>
-            <div><strong>Status:</strong> {{ ucfirst($order->status) }}</div>
+
             <div>
                 <strong>Total:</strong>
-                <span class="text-[#38BDF8] font-semibold">
+                <span class="text-[#38BDF8] font-bold">
                     ${{ number_format($order->total_amount, 2) }}
                 </span>
             </div>
+
+            <div>
+                <strong>Progress:</strong>
+                {{ $readyCount }} / {{ $totalCount }} Ready
+            </div>
         </div>
 
-        {{-- progress --}}
-        @php
-            $readyCount = $order->items->where('ready', true)->count();
-            $totalCount = $order->items->count();
-            $allReady = $readyCount === $totalCount;
-        @endphp
-
-        <div class="mb-3 text-sm text-[#3B2F2A]/70">
-            Progress: {{ $readyCount }} / {{ $totalCount }} ready
-        </div>
-
-        {{-- error --}}
+        {{-- ERROR --}}
         @if(session()->has('error'))
-            <div class="text-red-500 text-sm mb-2">
+            <div class="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">
                 {{ session('error') }}
             </div>
         @endif
 
-        {{-- admin message --}}
-        <textarea
-            wire:model="adminMessage"
-            class="w-full border border-[#3B2F2A]/20 rounded p-2 text-sm mb-4 bg-white"
-            placeholder="Optional message to customer">
-        </textarea>
+        {{-- SUCCESS MESSAGE --}}
+        @if($successMessage)
+            <div class="bg-green-100 text-green-700 p-3 rounded mb-4 text-sm">
+                {{ $successMessage }}
+            </div>
 
-        {{-- status buttons --}}
+            <script>
+                setTimeout(() => {
+                    @this.call('clearSuccessMessage');
+                }, 4000);
+            </script>
+        @endif
+
+        {{-- STATUS CONTROL --}}
         @if(auth()->user()->hasRole('super admin'))
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-5">
-            @foreach($statuses as $status)
-                @if($status !== $order->status)
-                    <button
-                        wire:click="updateStatus('{{ $status }}')"
-                        @if(!$allReady) disabled @endif
-                        class="bg-[#3B2F2A] text-white text-sm py-2 rounded-lg disabled:opacity-40">
-                        Mark {{ ucfirst($status) }}
-                    </button>
-                @endif
-            @endforeach
-        </div>
+
+            <textarea
+                wire:model="adminMessage"
+                class="w-full border rounded-lg p-3 mb-4"
+                placeholder="Optional customer message"
+            ></textarea>
+
+            <div class="flex gap-3 mb-6 items-center">
+
+                <select
+                    wire:model="selectedStatus"
+                    class="w-full border rounded-lg p-2"
+                >
+                    <option value="">Select Status</option>
+
+                    @foreach($statuses as $status)
+                        <option value="{{ $status }}">
+                            {{ ucfirst($status) }}
+                        </option>
+                    @endforeach
+
+                </select>
+
+                <button
+                    wire:click="updateStatus"
+                    class="bg-[#3B2F2A] text-white px-4 py-2 rounded-lg whitespace-nowrap"
+                >
+                    Update
+                </button>
+
+            </div>
+
         @endif
 
         {{-- ITEMS --}}
-        <div class="space-y-3">
-            <h3 class="font-semibold text-[#3B2F2A]">Items</h3>
+        <div class="space-y-4">
 
-            @foreach($order->items as $item)
-                <div class="flex justify-between items-center border border-[#3B2F2A]/10 rounded-xl p-3 bg-white">
+            @foreach($visibleItems as $item)
 
-                    <div class="flex gap-3 items-center">
+                <div class="bg-white rounded-xl p-4 flex justify-between items-center border border-[#3B2F2A]/10">
+
+                    <div class="flex gap-4 items-center">
 
                         <img
-                            src="{{ route('product-variants.image', $item->variant->id) }}?t={{ time() }}"
-                            class="w-20 h-20 rounded object-cover"
+                            src="{{ route('product-variants.image', $item->variant->id) }}"
+                            class="w-20 h-20 rounded-lg object-cover"
                         >
 
-                        <div class="text-sm">
-                            <div class="font-semibold">{{ $item->variant->name }}</div>
-                            <div class="text-[#3B2F2A]/70">Qty: {{ $item->quantity }}</div>
-                            <div class="text-[#38BDF8] font-semibold">
+                        <div>
+                            <div class="font-semibold">
+                                {{ $item->variant->name }}
+                            </div>
+
+                            <div class="text-sm text-[#3B2F2A]/60">
+                                Qty: {{ $item->quantity }}
+                            </div>
+
+                            <div class="text-[#38BDF8] font-bold">
                                 ${{ number_format($item->variant->price, 2) }}
                             </div>
                         </div>
+
                     </div>
 
-                    <div class="text-right">
+                    <div>
 
                         @if($item->ready)
-                            <div class="text-green-600 text-xs font-bold">
+
+                            <div class="text-green-600 font-bold text-sm">
                                 READY
                             </div>
+
                         @else
-                            @if($item->variant->created_by === auth()->id())
+
+                            @if(auth()->user()->hasRole('super admin') 
+                                || $item->variant->product->created_by === auth()->id())
+
                                 <button
                                     wire:click="markReady({{ $item->id }})"
-                                    class="bg-[#38BDF8] text-white text-xs px-2 py-1 rounded-lg">
+                                    class="bg-[#38BDF8] text-white px-4 py-2 rounded-lg text-sm"
+                                >
                                     Mark Ready
                                 </button>
+
                             @else
-                                <div class="text-[#3B2F2A]/40 text-xs">
-                                    Waiting
+
+                                <div class="text-gray-400 text-sm">
+                                    Not yours
                                 </div>
+
                             @endif
+
                         @endif
 
                     </div>
 
                 </div>
+
             @endforeach
 
         </div>
 
     </div>
+
 </div>
 
 @endif
+
 </div>
