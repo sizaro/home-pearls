@@ -70,7 +70,7 @@ new #[Layout('layouts.products')] class extends Component
                     </h3>
 
                     <p class="text-[#38BDF8] font-bold mt-2">
-                        ${{ number_format($variant->price, 2) }}
+                        UGX {{ number_format($variant->price, 2) }}
                     </p>
 
                     {{-- **Add to Cart Component** --}}

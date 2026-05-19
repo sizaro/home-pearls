@@ -153,7 +153,7 @@ PAGE WRAPPER (SAFE INSIDE LAYOUT)
                     </p>
 
                     <p class="text-[#38BDF8] font-bold mt-1">
-                        ${{ number_format($variant['price'], 2) }}
+                        UGX {{ number_format($variant['price'], 2) }}
                     </p>
 
                     <p class="text-xs text-gray-500">
