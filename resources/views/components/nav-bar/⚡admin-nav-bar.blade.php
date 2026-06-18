@@ -31,10 +31,17 @@ new class extends Component
                     ☰
                 </button>
 
-                {{-- BRAND --}}
-                <a href="{{ route('admin.dashboard') }}" class="text-2xl font-bold">
-                    Home Pearls Admin
-                </a>
+
+
+                <a href="{{ route('admin.dashboard') }}"
+   class="flex items-center gap-2 text-xl font-bold text-[#8B5E3C]">
+
+    <img src="{{ asset('images/homepearls_logo.webp') }}"
+         alt="Home Pearls Logo"
+         class="w-8 h-8 object-contain">
+
+    <span>Home Pearls Admin</span>
+</a>
 
                 {{-- USER --}}
                 @auth
