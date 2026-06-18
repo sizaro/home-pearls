@@ -101,3 +101,21 @@ new class extends Component
     @endif
 
 </div>
+
+
+<!-- <button
+        class="
+            bg-[#8B5E3C]
+            hover:bg-[#6F472E]
+            text-white
+            px-4 py-2
+            rounded-md
+            font-semibold
+            transition
+            shadow-sm
+            hover:shadow-md
+            focus:ring-2 focus:ring-[#38BDF8]
+        "
+    >
+        Add to Cart
+    </button> -->

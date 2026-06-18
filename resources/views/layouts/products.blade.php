@@ -2,8 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
+    {{-- VERY IMPORTANT --}}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Home Pearls' }}</title>
+
+    <title>{{ $title ?? 'Products | Home Pearls' }}</title>
+
+    {{-- ================= FAVICON (browser tab icon) ================= --}}
+    <link rel="icon" type="image/webp" href="{{ asset('images/homepearls_logo.webp') }}">
+    <link rel="shortcut icon" href="{{ asset('images/homepearls_logo.webp') }}">
+
+    {{-- ================= OPEN GRAPH (Facebook, WhatsApp, LinkedIn) ================= --}}
+    <meta property="og:title" content="Home Pearls">
+    <meta property="og:description" content="Beautiful furniture and home essentials at Home Pearls.">
+    <meta property="og:image" content="{{ asset('images/homepearls_logo.webp') }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+
+    {{-- ================= TWITTER CARD ================= --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="|Products | Home Pearls">
+    <meta name="twitter:description" content="Beautiful furniture and home essentials at Home Pearls.">
+    <meta name="twitter:image" content="{{ asset('images/homepearls_logo.webp') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
