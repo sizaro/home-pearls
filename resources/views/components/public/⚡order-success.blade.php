@@ -49,7 +49,7 @@ new #[Layout('layouts.products')] class extends Component
         {{-- INFO BOX --}}
         <div class="bg-[#E7DED5] border border-[#38BDF8]/30 p-4 rounded-xl text-sm text-[#3B2F2A]/80">
 
-            📲 We will contact you via WhatsApp to confirm your order and arrange delivery.
+            📲 We will contact you via WhatsApp or through your email to confirm your order and arrange delivery.
 
         </div>
 
@@ -59,11 +59,6 @@ new #[Layout('layouts.products')] class extends Component
             <a href="{{ route('home-pearls') }}"
                class="bg-[#38BDF8] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition shadow-sm">
                 Continue Shopping
-            </a>
-
-            <a href="{{ route('cart') }}"
-               class="border border-[#3B2F2A]/20 px-6 py-2 rounded-lg hover:bg-[#E7DED5] transition">
-                View Cart
             </a>
 
         </div>

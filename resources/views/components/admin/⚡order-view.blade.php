@@ -37,7 +37,9 @@ new class extends Component
     {
         if (!$id) return;
 
-        $this->order = Order::with('items.variant.product')->find($id);
+        $this->order = Order::with(
+    'items.variant.product.creator'
+)->find($id);
 
         if ($this->order) {
             $this->selectedStatus = $this->order->status;
@@ -96,12 +98,19 @@ new class extends Component
             return;
         }
 
-        $allReady = $this->order->items->every(fn ($i) => $i->ready);
+        // Only require READY when completing the order
+if ($this->selectedStatus === 'completed') {
 
-        if (!$allReady) {
-            session()->flash('error', 'All items must be marked READY first.');
-            return;
-        }
+    $allReady = $this->order->items->every(fn ($i) => $i->ready);
+
+    if (!$allReady) {
+        session()->flash(
+            'error',
+            'All items must be marked READY before completing the order.'
+        );
+        return;
+    }
+}
 
         $old = $this->order->status;
 
@@ -200,6 +209,7 @@ Thank you.
 
         <div class="bg-white rounded-xl p-4 mb-5 space-y-2">
             <div><strong>Email:</strong> {{ $order->email }}</div>
+            <div><strong>WhatsApp Contact:</strong> {{ $order->whatsapp }}</div>
 
             <div>
                 <strong>Total:</strong>
@@ -285,9 +295,44 @@ Thank you.
                         >
 
                         <div>
-                            <div class="font-semibold">
-                                {{ $item->variant->name }}
-                            </div>
+                            <div 
+    class="
+    font-semibold
+
+    @if(auth()->user()->hasRole('super admin'))
+
+        @if($item->variant->product->creator->id === auth()->id())
+            text-[#38BDF8]
+        @else
+            text-purple-600
+        @endif
+
+    @endif
+    "
+>
+    {{ $item->variant->name }}
+</div>
+
+
+@if(auth()->user()->hasRole('super admin'))
+
+    <div class="text-xs mt-1">
+
+        @if($item->variant->product->creator)
+
+            <span class="text-gray-500">
+                Created by:
+            </span>
+
+            <span class="font-semibold text-[#8B5E3C]">
+                {{ $item->variant->product->creator->name }}
+            </span>
+
+        @endif
+
+    </div>
+
+@endif
 
                             <div class="text-sm text-[#3B2F2A]/60">
                                 Qty: {{ $item->quantity }}
@@ -302,33 +347,52 @@ Thank you.
 
                     <div>
 
-                        @if($item->ready)
+                       @php
+    $isSuperAdmin = auth()->user()->hasRole('super admin');
+    $isOwner = $item->variant->product->created_by === auth()->id();
 
-                            <div class="text-green-600 font-bold text-sm">
-                                READY
-                            </div>
+    $creator = $item->variant->product->creator;
+@endphp
 
-                        @else
+@if($item->ready)
 
-                            @if(auth()->user()->hasRole('super admin') 
-                                || $item->variant->product->created_by === auth()->id())
+    {{-- FINAL STATE --}}
+    <div class="text-green-600 font-bold text-sm flex items-center gap-1">
+        ✔ READY
+    </div>
 
-                                <button
-                                    wire:click="markReady({{ $item->id }})"
-                                    class="bg-[#38BDF8] text-white px-4 py-2 rounded-lg text-sm"
-                                >
-                                    Mark Ready
-                                </button>
+@else
 
-                            @else
+    @if($isSuperAdmin || $isOwner)
 
-                                <div class="text-gray-400 text-sm">
-                                    Not yours
-                                </div>
+        <button
+            wire:click="markReady({{ $item->id }})"
+            class="
+                px-4 py-2 rounded-lg text-sm text-white transition
 
-                            @endif
+                @if($isSuperAdmin)
+                    @if($creator && $creator->hasRole('super admin'))
+                        bg-[#38BDF8]
+                    @else
+                        bg-purple-600
+                    @endif
+                @else
+                    bg-[#38BDF8]
+                @endif
+            "
+        >
+            Mark Ready
+        </button>
 
-                        @endif
+    @else
+
+        <div class="text-gray-400 text-sm">
+            Not yours
+        </div>
+
+    @endif
+
+@endif
 
                     </div>
 

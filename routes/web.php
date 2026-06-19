@@ -19,7 +19,7 @@ Route::livewire('/products', 'public.products')
     ->name('products');
 
 Route::livewire('/order/success', 'public.order-success')
-    ->name('order-success');
+    ->name('order.success');
 
 Route::livewire('cart', 'public.cart')
     ->name('cart');

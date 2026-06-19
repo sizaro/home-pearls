@@ -206,7 +206,7 @@ new #[Layout('layouts.products')] class extends Component
 
             <input type="text"
                 wire:model="whatsapp"
-                placeholder="WhatsApp (optional)"
+                placeholder="WhatsApp Number"
                 class="w-full border border-[#3B2F2A]/20 px-3 py-2 rounded bg-[#F6F1EB] text-[#3B2F2A]"
             >
 
