@@ -22,7 +22,7 @@ FROM php:8.4-apache-bookworm AS runtime
 
 WORKDIR /var/www/html
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl gettext-base libpq-dev libzip-dev unzip \
+    && apt-get install -y --no-install-recommends curl gettext-base libonig-dev libpq-dev libzip-dev unzip \
     && docker-php-ext-install pdo_pgsql zip mbstring bcmath \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
