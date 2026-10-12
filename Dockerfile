@@ -40,7 +40,9 @@ RUN chmod +x /usr/local/bin/home-pearls-entrypoint \
     && find storage bootstrap/cache -type f -exec chmod 664 {} \;
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public \
-    PORT=10000
+    PORT=10000 \
+    LOG_CHANNEL=stderr \
+    LOG_LEVEL=warning
 
 EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD curl --fail "http://127.0.0.1:${PORT}/up" || exit 1
