@@ -31,12 +31,24 @@ new class extends Component
 
     public function next()
     {
-        $this->index = ($this->index + 1) % count($this->products);
+        $productCount = count($this->products);
+
+        if ($productCount === 0) {
+            return;
+        }
+
+        $this->index = ($this->index + 1) % $productCount;
     }
 
     public function prev()
     {
-        $this->index = ($this->index - 1 + count($this->products)) % count($this->products);
+        $productCount = count($this->products);
+
+        if ($productCount === 0) {
+            return;
+        }
+
+        $this->index = ($this->index - 1 + $productCount) % $productCount;
     }
 
     public function autoSlide()
@@ -48,7 +60,9 @@ new class extends Component
 ?>
 <div
     class="relative max-w-6xl overflow-hidden bg-[#F6F1EB]"
-    wire:poll.6000ms="autoSlide"
+    @if (count($products) > 1)
+        wire:poll.6000ms="autoSlide"
+    @endif
 >
 
     @php
