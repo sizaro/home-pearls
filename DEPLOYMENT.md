@@ -80,14 +80,23 @@ Set `CLOUDINARY_FOLDER=home-pearls/development` locally. The different folders p
    INITIAL_SUPER_ADMIN_PASSWORD=...
    ```
 
-   Then, in the Render Shell, run:
+   For a paid Render service with a Render Shell or pre-deploy command, run:
 
    ```sh
    php artisan migrate --force
    php artisan db:seed --force
    ```
 
-   Set `INITIAL_SUPER_ADMIN_ENABLED=false` and remove the name, email, and password variables immediately afterward. Later seed runs will keep roles and permissions current but will not create another administrator.
+   On a free service without Shell access, instead set these two temporary environment variables and redeploy:
+
+   ```text
+   RUN_MIGRATIONS_ON_START=true
+   RUN_DATABASE_SEED_ON_START=true
+   ```
+
+   The container runs Laravel's non-destructive migrations, then the seed once before Apache starts. If either step fails, the deployment fails instead of serving a broken application.
+
+   After the application starts successfully, set both `RUN_*_ON_START` values to `false`. Also set `INITIAL_SUPER_ADMIN_ENABLED=false` and remove the name, email, and password variables immediately afterward. Later seed runs will keep roles and permissions current but will not create another administrator.
 
 5. Set the health-check path to `/up`.
 6. Verify the public storefront, administrator login, product and variant creation, Cloudinary uploads, cart, email OTP checkout, and order status transitions.
