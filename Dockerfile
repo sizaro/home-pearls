@@ -1,18 +1,22 @@
+FROM composer:2 AS vendor
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts
+COPY . .
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction \
+    && php artisan package:discover --ansi
+
 FROM node:20-bookworm-slim AS assets
 
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+COPY --from=vendor /app/vendor ./vendor
 COPY resources ./resources
 COPY public ./public
 COPY vite.config.js ./
 RUN npm run build
-
-FROM composer:2 AS vendor
-
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 FROM php:8.4-apache-bookworm AS runtime
 
