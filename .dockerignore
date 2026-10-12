@@ -1,4 +1,10 @@
 node_modules
 vendor
 .env
+.env.*
+!.env.example
 .git
+.github
+storage/logs
+tests
+README.md

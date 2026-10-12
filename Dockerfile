@@ -1,64 +1,43 @@
-FROM php:8.4-apache
+FROM node:20-bookworm-slim AS assets
 
-WORKDIR /var/www/html
-
-# Install system dependencies + PHP extensions
-RUN apt-get update && apt-get install -y \
-    git unzip curl libpq-dev libzip-dev zip libonig-dev \
-    && docker-php-ext-install pdo pdo_pgsql zip mbstring bcmath
-
-# Enable Apache rewrite module
-RUN a2enmod rewrite
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copy project files
-COPY . .
-
-# Install PHP dependencies
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
-
-# Install Node.js (Vite requires Node 20+)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
-# Clean install to avoid npm bugs
-RUN rm -rf node_modules package-lock.json \
-    && npm install
-
-# Build frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY resources ./resources
+COPY public ./public
+COPY vite.config.js ./
 RUN npm run build
 
-# Create storage log file + fix permissions
-RUN mkdir -p storage/logs \
-    && touch storage/logs/laravel.log \
-    && chmod -R 777 storage bootstrap/cache
+FROM composer:2 AS vendor
 
-# Set Apache document root to Laravel public folder
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
-    /etc/apache2/sites-available/*.conf
+FROM php:8.4-apache-bookworm AS runtime
 
-# -------------------------------
-# FIXED: Apache Virtual Host (SAFE METHOD)
-# -------------------------------
-RUN printf '<VirtualHost *:10000>\n\
-    DocumentRoot /var/www/html/public\n\
-\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>\n\
-\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>\n' > /etc/apache2/sites-available/000-default.conf
+WORKDIR /var/www/html
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl gettext-base libpq-dev libzip-dev unzip \
+    && docker-php-ext-install pdo_pgsql zip mbstring bcmath \
+    && a2enmod rewrite headers \
+    && rm -rf /var/lib/apt/lists/*
 
-# Change Apache port from 80 → 10000 (Render requirement)
-RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf
+COPY . .
+COPY --from=vendor /app/vendor ./vendor
+COPY --from=assets /app/public/build ./public/build
+COPY docker/apache-vhost.conf.template /etc/apache2/sites-available/000-default.conf.template
+COPY docker/ports.conf.template /etc/apache2/ports.conf.template
+COPY docker/entrypoint.sh /usr/local/bin/home-pearls-entrypoint
+
+RUN chmod +x /usr/local/bin/home-pearls-entrypoint \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && find storage bootstrap/cache -type d -exec chmod 775 {} \; \
+    && find storage bootstrap/cache -type f -exec chmod 664 {} \;
+
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public \
+    PORT=10000
 
 EXPOSE 10000
-
-CMD php artisan migrate --force || true && apache2-foreground
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD curl --fail "http://127.0.0.1:${PORT}/up" || exit 1
+ENTRYPOINT ["/usr/local/bin/home-pearls-entrypoint"]

@@ -4,10 +4,11 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Str;
+use App\Services\CloudinaryImageService;
 
 new #[Layout('layouts.admin')] class extends Component
 {
@@ -136,19 +137,10 @@ new #[Layout('layouts.admin')] class extends Component
 
             $this->authorize('update', $variant);
 
-            $image_path = $variant->image_url;
+            $replacement = $this->imageFile ? $this->uploadImage() : null;
+            if ($this->imageFile && ! $replacement) return;
 
-            if ($this->imageFile) {
-
-                if ($image_path && Storage::exists('private/product-variants/' . $image_path)) {
-                    Storage::delete('private/product-variants/' . $image_path);
-                }
-
-                $filename = time() . '_' . $this->imageFile->getClientOriginalName();
-                $this->imageFile->storeAs('private/product-variants', $filename);
-
-                $image_path = $filename;
-            }
+            $previousPublicId = $variant->image_public_id;
 
             $variant->update([
                 'product_id' => $this->product_id,
@@ -157,25 +149,40 @@ new #[Layout('layouts.admin')] class extends Component
                 'price' => $this->price,
                 'stock' => $this->stock,
                 'sku' => $this->sku,
-                'image_url' => $image_path,
+                'image_url' => $replacement['url'] ?? $variant->image_url,
+                'image_public_id' => $replacement['public_id'] ?? $variant->image_public_id,
             ]);
 
+            if ($replacement && $previousPublicId) {
+                try {
+                    app(CloudinaryImageService::class)->delete($previousPublicId, 'product-variants');
+                } catch (Throwable $exception) {
+                    Log::warning('A replaced Home Pearls variant image could not be removed from Cloudinary.', ['variant_id' => $variant->id, 'exception' => $exception]);
+                }
+            }
         } else {
 
             $this->authorize('create', ProductVariant::class);
 
-            $filename = time() . '_' . $this->imageFile->getClientOriginalName();
-            $this->imageFile->storeAs('private/product-variants', $filename);
+            $image = $this->uploadImage();
+            if (! $image) return;
 
-            ProductVariant::create([
-                'product_id' => $this->product_id,
-                'name' => $this->name,
-                'description' => $this->description,
-                'price' => $this->price,
-                'stock' => $this->stock,
-                'sku' => $this->sku,
-                'image_url' => $filename,
-            ]);
+            try {
+                ProductVariant::create([
+                    'product_id' => $this->product_id,
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'price' => $this->price,
+                    'stock' => $this->stock,
+                    'sku' => $this->sku,
+                    'image_url' => $image['url'],
+                    'image_public_id' => $image['public_id'],
+                    'created_by' => Auth::id(),
+                ]);
+            } catch (Throwable $exception) {
+                app(CloudinaryImageService::class)->delete($image['public_id'], 'product-variants');
+                throw $exception;
+            }
         }
 
         $this->loadVariants();
@@ -188,13 +195,27 @@ new #[Layout('layouts.admin')] class extends Component
 
         $this->authorize('delete', $variant);
 
-        if ($variant->image_url &&
-            Storage::exists('private/product-variants/' . $variant->image_url)) {
-            Storage::delete('private/product-variants/' . $variant->image_url);
+        try {
+            app(CloudinaryImageService::class)->delete($variant->image_public_id, 'product-variants');
+        } catch (Throwable $exception) {
+            report($exception);
+            session()->flash('error', 'The variant image could not be removed. The variant was not deleted.');
+            return;
         }
 
         $variant->delete();
         $this->loadVariants();
+    }
+
+    private function uploadImage(): ?array
+    {
+        try {
+            return app(CloudinaryImageService::class)->upload($this->imageFile, 'product-variants');
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->addError('imageFile', 'Image upload failed. Please try again.');
+            return null;
+        }
     }
 };
 ?>

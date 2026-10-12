@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Response;
 use App\Models\ProductVariant;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
@@ -49,33 +47,16 @@ Route::prefix('admin')
     }); 
 
 
-    Route::get('/products/image/{id}', function ($id) {
-    $product = Product::findOrFail($id);
-    $path = 'private/products/' . $product->image_url;
+Route::get('/products/image/{product}', function (Product $product) {
+    abort_unless($product->image_url, 404);
 
-    if (!Storage::exists($path)) {
-        abort(404);
-    }
-
-    return response()->file(Storage::path($path));
+    return redirect()->away($product->image_url);
 })->name('products.image');
 
+Route::get('/product-variants/image/{variant}', function (ProductVariant $variant) {
+    abort_unless($variant->image_url, 404);
 
-
-Route::get('/product-variants/image/{id}', function ($id) {
-    $variant = ProductVariant::findOrFail($id);
-
-    if (!$variant->image_url || !Storage::exists('private/product-variants/' . $variant->image_url)) {
-        abort(404);
-    }
-
-    $file = Storage::get('private/product-variants/' . $variant->image_url);
-    $type = Storage::mimeType('private/product-variants/' . $variant->image_url);
-
-    return Response::make($file, 200, [
-        'Content-Type' => $type,
-        'Content-Disposition' => 'inline; filename="' . $variant->image_url . '"'
-    ]);
+    return redirect()->away($variant->image_url);
 })->name('product-variants.image');
 
 require __DIR__.'/settings.php';

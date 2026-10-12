@@ -3,11 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
-use App\Models\User;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -104,45 +102,6 @@ class RolePermissionSeeder extends Seeder
         // 🔥 Customer → basically nothing admin-related
         $customer->syncPermissions([]);
 
-        // -----------------------------
-        // 4️⃣ USERS
-        // -----------------------------
-        $superAdminUser = User::firstOrCreate(
-            ['email' => 'homepearls2@gmail.com'],
-            [
-                'name' => 'Mukisa Nasibu',
-                'password' => Hash::make('mukisa123'),
-            ]
-        );
-        $superAdminUser->syncRoles([$superAdmin]);
-
-        $adminUser = User::firstOrCreate(
-            ['email' => 'homepearls2@gmail.com'],
-            [
-                'name' => 'Admin User',
-                'password' => Hash::make('Admin123!'),
-            ]
-        );
-        $adminUser->syncRoles([$admin]);
-
-        $employeeUser = User::firstOrCreate(
-            ['email' => 'employee@homepearls.com'],
-            [
-                'name' => 'Employee User',
-                'password' => Hash::make('Employee123!'),
-            ]
-        );
-        $employeeUser->syncRoles([$employee]);
-
-        $customerUser = User::firstOrCreate(
-            ['email' => 'customer@homepearls.com'],
-            [
-                'name' => 'Customer User',
-                'password' => Hash::make('Customer123!'),
-            ]
-        );
-        $customerUser->syncRoles([$customer]);
-
-        $this->command->info('✅ Roles & permissions seeded correctly.');
+        $this->command->info('Roles and permissions seeded.');
     }
 }

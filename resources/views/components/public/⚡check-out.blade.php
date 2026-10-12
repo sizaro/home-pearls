@@ -7,6 +7,7 @@ use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\Cart;
 use App\Models\Order;
@@ -83,10 +84,20 @@ new #[Layout('layouts.products')] class extends Component
             ]
         );
 
-        Mail::raw("Your OTP code: $otp", function ($message) {
-            $message->to($this->email)
+        try {
+            Mail::raw("Your OTP code: $otp", function ($message) {
+                $message->to($this->email)
                     ->subject('Verify Your Email');
-        });
+            });
+        } catch (\Throwable $exception) {
+            OtpCode::where('contact_type', 'email')
+                ->where('contact_value', $this->email)
+                ->delete();
+
+            Log::warning('Checkout OTP email could not be sent.', ['exception' => $exception]);
+            session()->flash('error', 'We could not send the verification email. Please try again.');
+            return;
+        }
 
         $this->otpSent = true;
         session()->flash('success', 'OTP sent to your email.');

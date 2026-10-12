@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Order;
 use App\Models\Visit;
+use Illuminate\Support\Facades\DB;
 
 new #[Layout('layouts.admin')] class extends Component
 {
@@ -63,14 +64,22 @@ new #[Layout('layouts.admin')] class extends Component
             ->pluck('total', 'date')
             ->toArray();
 
+        $driver = DB::connection()->getDriverName();
+        $weekExpression = $driver === 'sqlite'
+            ? "strftime('%Y-%W', created_at)"
+            : "TO_CHAR(created_at, 'IYYY-IW')";
+        $monthExpression = $driver === 'sqlite'
+            ? "strftime('%Y-%m', created_at)"
+            : "TO_CHAR(created_at, 'YYYY-MM')";
+
         // VISITS WEEKLY
-        $this->visitsWeekly = Visit::selectRaw("TO_CHAR(created_at, 'IYYY-IW') as week, COUNT(*) as total")
+        $this->visitsWeekly = Visit::selectRaw("{$weekExpression} as week, COUNT(*) as total")
             ->groupBy('week')
             ->pluck('total', 'week')
             ->toArray();
 
         // VISITS MONTHLY
-        $this->visitsMonthly = Visit::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as total")
+        $this->visitsMonthly = Visit::selectRaw("{$monthExpression} as month, COUNT(*) as total")
             ->groupBy('month')
             ->pluck('total', 'month')
             ->toArray();

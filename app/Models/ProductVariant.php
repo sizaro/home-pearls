@@ -17,6 +17,7 @@ class ProductVariant extends Model
         'stock',
         'sku',
         'image_url',
+        'image_public_id',
          'created_by',
     ];
 

@@ -5,10 +5,11 @@ use Livewire\WithFileUploads;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use App\Services\CloudinaryImageService;
 
 new #[Layout('layouts.admin')] class extends Component
 {
@@ -101,54 +102,54 @@ new #[Layout('layouts.admin')] class extends Component
 
         $user = Auth::user();
 
-        // UPDATE
         if ($this->productId) {
-
             $product = Product::findOrFail($this->productId);
-
             $this->authorize('update', $product);
 
-            $image_path = $product->image_url;
+            $replacement = $this->imageFile ? $this->uploadImage() : null;
+            if ($this->imageFile && ! $replacement) return;
 
-            if ($this->imageFile) {
-
-                if ($product->image_url &&
-                    Storage::exists('private/products/' . $product->image_url)) {
-                    Storage::delete('private/products/' . $product->image_url);
-                }
-
-                $filename = time() . '_' . $this->imageFile->getClientOriginalName();
-                $this->imageFile->storeAs('private/products', $filename);
-
-                $image_path = $filename;
-                $this->imageTimestamp = now()->timestamp;
-            }
+            $previousPublicId = $product->image_public_id;
 
             $product->update([
                 'name' => $this->name,
                 'description' => $this->description,
                 'category_id' => $this->category_id,
                 'slug' => Str::slug($this->name),
-                'image_url' => $image_path,
+                'image_url' => $replacement['url'] ?? $product->image_url,
+                'image_public_id' => $replacement['public_id'] ?? $product->image_public_id,
             ]);
 
-        } 
-        // CREATE
-        else {
+            if ($replacement && $previousPublicId) {
+                try {
+                    app(CloudinaryImageService::class)->delete($previousPublicId, 'products');
+                } catch (Throwable $exception) {
+                    Log::warning('A replaced Home Pearls product image could not be removed from Cloudinary.', ['product_id' => $product->id, 'exception' => $exception]);
+                }
+            }
+
+            $this->imageTimestamp = now()->timestamp;
+        } else {
 
             $this->authorize('create', Product::class);
 
-            $filename = time() . '_' . $this->imageFile->getClientOriginalName();
-            $this->imageFile->storeAs('private/products', $filename);
+            $image = $this->uploadImage();
+            if (! $image) return;
 
-            Product::create([
-                'name' => $this->name,
-                'description' => $this->description,
-                'category_id' => $this->category_id,
-                'slug' => Str::slug($this->name),
-                'image_url' => $filename,
-                'created_by' => $user->id,
-            ]);
+            try {
+                Product::create([
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'category_id' => $this->category_id,
+                    'slug' => Str::slug($this->name),
+                    'image_url' => $image['url'],
+                    'image_public_id' => $image['public_id'],
+                    'created_by' => $user->id,
+                ]);
+            } catch (Throwable $exception) {
+                app(CloudinaryImageService::class)->delete($image['public_id'], 'products');
+                throw $exception;
+            }
         }
 
         $this->loadProducts();
@@ -161,16 +162,33 @@ new #[Layout('layouts.admin')] class extends Component
 
         $this->authorize('delete', $product);
 
-        // ✅ SAFE: ONLY DELETE PRODUCT IMAGE
-        if ($product->image_url &&
-            Storage::exists('private/products/' . $product->image_url)) {
-            Storage::delete('private/products/' . $product->image_url);
+        try {
+            $product->loadMissing('variants');
+            $images = $product->variants->map(fn ($variant) => [$variant->image_public_id, 'product-variants'])
+                ->push([$product->image_public_id, 'products']);
+
+            foreach ($images as [$publicId, $collection]) {
+                app(CloudinaryImageService::class)->delete($publicId, $collection);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+            session()->flash('error', 'The product image could not be removed. The product was not deleted.');
+            return;
         }
 
-        // ✅ SAFE: CATEGORY IS NOT TOUCHED
         $product->delete();
-
         $this->loadProducts();
+    }
+
+    private function uploadImage(): ?array
+    {
+        try {
+            return app(CloudinaryImageService::class)->upload($this->imageFile, 'products');
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->addError('imageFile', 'Image upload failed. Please try again.');
+            return null;
+        }
     }
 };
 ?>

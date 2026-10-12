@@ -117,7 +117,12 @@ if ($this->selectedStatus === 'completed') {
         $this->order->status = $this->selectedStatus;
         $this->order->save();
 
-        $this->sendEmail($old, $this->selectedStatus);
+        try {
+            $this->sendEmail($old, $this->selectedStatus);
+        } catch (\Throwable $exception) {
+            report($exception);
+            session()->flash('error', 'The order status was updated, but the customer email could not be sent.');
+        }
 
         // refresh UI
         $this->loadOrder($this->orderId);

@@ -83,7 +83,7 @@ new class extends Component
             $dashboard = match(true) {
                 $user->hasRole('super admin') => route('admin.dashboard'),
                 $user->hasRole('admin') => route('admin.dashboard'),
-                default => route('dashboard'),
+                default => route('home-pearls'),
             };
         @endphp
 

@@ -15,6 +15,7 @@ class Product extends Model
         'slug',
         'description',
         'image_url',
+        'image_public_id',
          'created_by'
     ];
 
