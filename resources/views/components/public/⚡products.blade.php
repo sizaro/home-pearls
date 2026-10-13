@@ -66,7 +66,7 @@ new #[Layout('layouts.products')] class extends Component
 
                     <img
                         src="{{ $product['image_url'] 
-                            ? route('products.image', ['id' => $product['id']])
+                            ? route('products.image', ['product' => $product['id']])
                             : 'https://via.placeholder.com/400x300?text=No+Image' }}"
                         class="w-full h-48 object-cover"
                     >

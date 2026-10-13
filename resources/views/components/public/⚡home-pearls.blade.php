@@ -106,7 +106,7 @@ PAGE WRAPPER (SAFE INSIDE LAYOUT)
                 <div class="min-w-[220px] bg-white rounded-xl shadow p-3">
 
                     <img
-                        src="{{ route('products.image', ['id' => $product['id']]) }}"
+                        src="{{ route('products.image', ['product' => $product['id']]) }}"
                         class="w-full h-40 object-cover rounded"
                     >
 

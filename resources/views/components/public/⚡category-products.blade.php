@@ -61,7 +61,7 @@ new #[Layout('layouts.products')] class extends Component
 
                     <img
                         src="{{ $currentProduct['image_url']
-                            ? route('products.image', ['id' => $currentProduct['id']])
+                            ? route('products.image', ['product' => $currentProduct['id']])
                             : 'https://via.placeholder.com/1200x500' }}"
                         class="w-full h-full object-cover"
                     >
@@ -111,7 +111,7 @@ new #[Layout('layouts.products')] class extends Component
 
                 <img
                     src="{{ $product['image_url']
-                        ? route('products.image', ['id' => $product['id']])
+                        ? route('products.image', ['product' => $product['id']])
                         : 'https://via.placeholder.com/400x300' }}"
                     class="w-full h-48 object-cover"
                 >

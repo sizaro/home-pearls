@@ -31,8 +31,8 @@ new #[Layout('layouts.products')] class extends Component
 
     {{-- Product Image --}}
     <img
-        src="{{ $this->product->image_url 
-            ? route('products.image', ['id' => $this->product->id]) 
+        src="{{ $this->product->image_url
+            ? route('products.image', ['product' => $this->product->id])
             : 'https://via.placeholder.com/800x400?text=No+Image' }}"
         class="w-full h-64 md:h-96 object-cover rounded-xl mb-6 border border-[#8B5E3C]/20"
     >
@@ -59,7 +59,7 @@ new #[Layout('layouts.products')] class extends Component
 
                     {{-- Variant Image --}}
                     <img
-                        src="{{ $variant->image_url 
+                        src="{{ $variant->image_url
                             ? route('product-variants.image', ['id' => $variant->id])
                             : 'https://via.placeholder.com/300x200?text=No+Image' }}"
                         class="w-full h-48 object-cover rounded-lg mb-2 border border-[#8B5E3C]/10"
